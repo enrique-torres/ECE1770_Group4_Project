@@ -10,16 +10,26 @@ sudo usermod -a -G docker aditya
 
 cd ~/Desktop/hyperledger/fabric-samples/asset-transfer-basic/chaincode-javascript
 sudo apt-get update
+
+#install nodeJS version 16
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt-get install -y nodejs
+
+#below command will create the node js modules inside the nodejs sample chain code and will install the dependencies  based on package.json
 npm install
 cd ../../test-network
 export FABRIC_CFG_PATH=$PWD/../config/
 cd ~/Desktop/hyperledger/fabric-samples/bin
 export PATH=${PWD}:$PATH
 cd ~/Desktop
+
+#ensure all project directories are owned by current user and not root
 sudo chown -R aditya:aditya hyperledger/
+
+#bring up the fabric test network
 cd ~/Desktop/hyperledger/fabric-samples/test-network
+sudo ./network.sh up createChannel -c channel1 -ca
+
 peer lifecycle chaincode package basic.tar.gz --path ../asset-transfer-basic/chaincode-javascript/ --lang node --label basic_1.0
 . ./scripts/envVar.sh
 setGlobals 1
