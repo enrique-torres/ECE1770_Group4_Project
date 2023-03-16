@@ -8,9 +8,17 @@ sudo systemctl enable docker
 sudo usermod -a -G docker aditya
 
 
-cd ~/Desktop/hyperledger/fabric-samples/asset-transfer-basic/chaincode-javascript
+
 sudo apt-get update
 
+#install golang
+cd ~/Desktop/
+curl -O https://dl.google.com/go/go1.18.3.linux-amd64.tar.gz
+tar xvf go1.18.3.linux-amd64.tar.gz
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
+
+cd ~/Desktop/hyperledger/fabric-samples/asset-transfer-basic/chaincode-javascript
 #install nodeJS version 16
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt-get install -y nodejs
