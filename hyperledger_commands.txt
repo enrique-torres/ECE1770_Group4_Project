@@ -18,6 +18,9 @@ tar xvf go1.18.3.linux-amd64.tar.gz
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
+#install jq
+sudo snap install jq
+
 cd ~/Desktop/hyperledger/fabric-samples/asset-transfer-basic/chaincode-javascript
 #install nodeJS version 16
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
@@ -62,3 +65,7 @@ peer lifecycle chaincode querycommitted --channelID channel1 --name basic --cafi
 docker ps
 
 docker-compose -f compose/compose-test-net.yaml ps
+
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile $PWD/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C channel1 -n basic --peerAddresses localhost:7051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses localhost:9051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"function":"InitLedger","Args":[]}'
+
+peer chaincode query -C channel1 -n basic -c '{"Args":["GetAllAssets"]}' | jq .
