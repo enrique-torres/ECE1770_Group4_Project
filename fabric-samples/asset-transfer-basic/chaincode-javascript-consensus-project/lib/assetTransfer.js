@@ -16,21 +16,22 @@ class AssetTransfer extends Contract {
     async InitLedger(ctx) {
         const asset =
             {
+                RecordID: '117238223',
                 PatientID: 'gghg8uuuuh8h9',
                 PatientName: 'hgfhhfghyhfgh',
                 PatientDOB: '6ytryr6yr5yrt',
                 AccessorID: ['Mark Wiliams', 'Tommy Insurance Company', 'Dr Patel'],
-                MedicalRecords: ['ghhr6yytd56ytthrt6y6yhgfththf','gdghtrh6yryrdth6ythfhd65ytrhhd6yh','hrtdu56yrgrtsydrthdytf'],
+                MedicalRecords: ['9uvdghhr6yytd56ytthrt6y6yhgfththf','gdghtrh6yryrdth6ythfhd65ytrhhd6yh','hrtdu5llklklkl6yrgrtsydrthdytf'],
             };
          
-	   let recordID='gdg5ygtdghrty5yt';
+	   //let recordID='gdg5ygtdghrty5yt';
         
             asset.docType = 'asset';
             // example of how to write to world state deterministically
             // use convetion of alphabetic order
             // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
             // when retrieving data, in any lang, the order of data will be the same and consequently also the corresonding hash
-            await ctx.stub.putState(recordID, Buffer.from(stringify(sortKeysRecursive(asset))));
+            await ctx.stub.putState(asset.RecordID, Buffer.from(stringify(sortKeysRecursive(asset))));
         
     }
 
@@ -42,7 +43,7 @@ class AssetTransfer extends Contract {
         }
 
         const asset = {
-                
+                RecordID: recordID,
                 PatientID: patientID,
                 PatientName: patientName,
                 PatientDOB: patientDOB,
@@ -71,7 +72,10 @@ class AssetTransfer extends Contract {
         }
         const asset = JSON.parse(assetString);
         if (asset.AccessorID.includes(accessorID)){
-            return assetJSON.toString();
+            return assetString;
+        }
+        else {
+            return "";
         }
     }
     
@@ -81,14 +85,17 @@ class AssetTransfer extends Contract {
         if (!exists) {
             throw new Error(`The asset ${id} does not exist`);
         }
-
+	const array_accessor = accessorID.split(",");
+	const array_medical = medicalRecords.split(",");
+	
         // overwriting original asset with new asset
         const updatedAsset = {
+            RecordID: id,
             PatientID: patientID,
             PatientName: patientName,
             PatientDOB: patientDOB,
-            AccessorID: accessorID,
-            MedicalRecords: medicalRecords,
+            AccessorID: array_accessor,
+            MedicalRecords: array_medical,
     	};
         // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
         return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));

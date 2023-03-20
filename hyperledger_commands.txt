@@ -41,7 +41,8 @@ sudo chown -R aditya:aditya hyperledger/
 cd ~/Desktop/hyperledger/fabric-samples/test-network
 sudo ./network.sh up createChannel -c channel1 -ca
 
-peer lifecycle chaincode package basic.tar.gz --path ../asset-transfer-basic/chaincode-javascript/ --lang node --label basic_1.0
+
+peer lifecycle chaincode package basic.tar.gz --path ~/Desktop/hyperledger/ECE1770_Group4_Project/fabric-samples/asset-transfer-basic/chaincode-javascript-consensus-project/ --lang node --label basic_1.0
 . ./scripts/envVar.sh
 setGlobals 1
 peer lifecycle chaincode install basic.tar.gz
