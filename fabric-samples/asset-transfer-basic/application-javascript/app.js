@@ -12,7 +12,8 @@ const path = require('path');
 const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('../../test-application/javascript/CAUtil.js');
 const { buildCCPOrg1, buildWallet } = require('../../test-application/javascript/AppUtil.js');
 
-const channelName = 'mychannel';
+//const channelName = 'mychannel';
+const channelName = 'channel1';
 const chaincodeName = 'basic';
 const mspOrg1 = 'Org1MSP';
 const walletPath = path.join(__dirname, 'wallet');
@@ -128,14 +129,15 @@ async function main() {
 			// This will be sent to both peers and if both peers endorse the transaction, the endorsed proposal will be sent
 			// to the orderer to be committed by each of the peer's to the channel ledger.
 			console.log('\n--> Submit Transaction: CreateAsset, creates new asset with ID, color, owner, size, and appraisedValue arguments');
-			result = await contract.submitTransaction('CreateAsset', 'asset13', 'yellow', '5', 'Tom', '1300');
+			result = await contract.submitTransaction('CreateAsset', '11223344', 'g656rtyrt', 'hrht56yuthtytyjgh', 'htyhdthtyh', 'gdfgdfgfhfhfg,hfhfhfghfghghg,hfghfghhf','gfdgdfgdfgdf,fghhfhfg');
+			
 			console.log('*** Result: committed');
 			if (`${result}` !== '') {
 				console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 			}
 
 			console.log('\n--> Evaluate Transaction: ReadAsset, function returns an asset with a given assetID');
-			result = await contract.evaluateTransaction('ReadAsset', 'asset13');
+			result = await contract.evaluateTransaction('ReadAsset', '11223344');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 
 			console.log('\n--> Evaluate Transaction: AssetExists, function returns "true" if an asset with given assetID exist');
@@ -143,8 +145,8 @@ async function main() {
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 
 			console.log('\n--> Submit Transaction: UpdateAsset asset1, change the appraisedValue to 350');
-			await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
-			console.log('*** Result: committed');
+//			await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
+//			console.log('*** Result: committed');
 
 			console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
 			result = await contract.evaluateTransaction('ReadAsset', 'asset1');
@@ -160,9 +162,9 @@ async function main() {
 				console.log(`*** Successfully caught the error: \n    ${error}`);
 			}
 
-			console.log('\n--> Submit Transaction: TransferAsset asset1, transfer to new owner of Tom');
-			await contract.submitTransaction('TransferAsset', 'asset1', 'Tom');
-			console.log('*** Result: committed');
+//			console.log('\n--> Submit Transaction: TransferAsset asset1, transfer to new owner of Tom');
+//			await contract.submitTransaction('TransferAsset', 'asset1', 'Tom');
+//			console.log('*** Result: committed');
 
 			console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
 			result = await contract.evaluateTransaction('ReadAsset', 'asset1');
