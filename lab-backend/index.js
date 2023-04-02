@@ -24,6 +24,7 @@ const walletPath = path.join(__dirname, 'wallet');
 const org1UserId = 'appUser';
 var gatewayinitialized = false;
 
+
 // Create a new gateway instance for interacting with the fabric network.
 const gateway = new Gateway();
 let ccp = null;
@@ -229,6 +230,7 @@ async function addLedgerEntry(recordid, accessorid, medicalrecordarray)
 		gateway.disconnect();
 	}
 }
+
 
 async function testConsent(){
     await updateLedgerWithAccessorID('117238223', 'ajunnark');

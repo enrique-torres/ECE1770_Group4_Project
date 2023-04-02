@@ -28,9 +28,11 @@ sudo apt-get install -y nodejs
 
 #below command will create the node js modules inside the nodejs sample chain code and will install the dependencies  based on package.json
 npm install
-cd ../../test-network
+cd ~/Desktop/hyperledger/ECE1770_Group4_Project/fabric-samples/test-network
+
 export FABRIC_CFG_PATH=$PWD/../config/
 cd ~/Desktop/hyperledger/fabric-samples/bin
+cd ~/Desktop/hyperledger/ECE1770_Group4_Project/fabric-samples/bin
 export PATH=${PWD}:$PATH
 cd ~/Desktop
 
@@ -39,6 +41,7 @@ sudo chown -R aditya:aditya hyperledger/
 
 #bring up the fabric test network
 cd ~/Desktop/hyperledger/fabric-samples/test-network
+cd ~/Desktop/hyperledger/ECE1770_Group4_Project/fabric-samples/test-network
 ./network.sh up createChannel -c channel1 -ca
 
 
