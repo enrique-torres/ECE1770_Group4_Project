@@ -187,15 +187,13 @@
       <h1><span class="black">HyperSecure</span> <span class="blue">Labs</span></h1>
     </div>
     <div class="update-consent-box">
-      <h1>Update Access Consent</h1>
+      <h1>Update Access Consent For Report <%=reportID%></h1>
       <div class="dropdown">
         <select id="providers">
           <option value="default" selected disabled>Select who to provide access to</option>
-          <option value="provider1">Provider 1</option>
-          <option value="provider2">Provider 2</option>
-          <option value="provider3">Provider 3</option>
-          <option value="provider4">Provider 4</option>
-          <option value="provider5">Provider 5</option>
+          <% clientsList.forEach(function(client) { %>
+          <option value=<%=client.clientUsername%>><%=client.clientVisibleName%></option>
+          <% })%>
         </select>
       </div>
       <button id="add-btn" class="btn">Add Access</button>
@@ -204,6 +202,7 @@
         <ul id="provider-list" class="list"></ul>
       </div>
       <button id="submit-btn" class="btn">Update Consent</button>
+      <input type="hidden" id="reportIDVar" name="reportIDVar" value=<%=reportID%>>
     </div>
   <script>
     const select = document.querySelector("#providers");
@@ -213,13 +212,14 @@
     const listContainer = document.querySelector("#list-container");
     const submitButton = document.querySelector("#submit-btn");
 
-    let providers = [];
+    let clientUsernames = [];
 
     addButton.addEventListener("click", function() {
         const selectedProvider = select.options[select.selectedIndex].text;
+        const selectedProviderUsername = select.options[select.selectedIndex].value;
 
-        if (!providers.includes(selectedProvider) && select.options[select.selectedIndex] != select.options[0]) {
-            providers.push(selectedProvider);
+        if (!clientUsernames.includes(selectedProviderUsername) && select.options[select.selectedIndex] != select.options[0]) {
+          clientUsernames.push(selectedProviderUsername);
 
             const listItem = document.createElement("li");
             listItem.setAttribute("id", selectedProvider)
@@ -231,36 +231,36 @@
 
     removeButton.addEventListener("click", function() {
         const selectedProvider = select.options[select.selectedIndex].text;
-        if (providers.includes(selectedProvider) && select.options[select.selectedIndex] != select.options[0]) {
-            providers.splice(providers.indexOf(selectedProvider), 1)
+        const selectedProviderUsername = select.options[select.selectedIndex].value;
+        if (clientUsernames.includes(selectedProviderUsername) && select.options[select.selectedIndex] != select.options[0]) {
+          clientUsernames.splice(clientUsernames.indexOf(selectedProviderUsername), 1)
 
             document.getElementById(selectedProvider).remove();
         }
 
-        if (providers.length <= 0) {
+        if (clientUsernames.length <= 0) {
             listContainer.style.visibility ='hidden';
         }
     });
 
     submitButton.addEventListener("click", function() {
-    const url = "/patient/consentupdate";
-    const data = { providers: providers };
-    
-    fetch(url, {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-        "Content-Type": "application/json"
-        }
-    })
-    .then(response => {
+      const reportID = document.getElementById('reportIDVar').value
+      const url = "/labapi/consentupdate/" + reportID;
+      const data = { clientUsernames: clientUsernames };
+      
+      fetch(url, {
+          method: "POST",
+          body: JSON.stringify(data),
+          headers: {
+          "Content-Type": "application/json"
+          }
+      })
+      .then(response => {
         if (!response.ok) {
-        throw new Error("Network response was not ok");
+          throw new Error("Network response was not ok");
         }
-        return response.json();
-    })
-    .then(json => console.log(json))
-    .catch(error => console.error("Error:", error));
+        window.location.href = '/success';
+      });
     });
   </script>
   </body>
