@@ -360,6 +360,7 @@
                 form.addEventListener( 'submit', function( e )
                 {
                     // start of updated code
+                    /*
                     e.preventDefault();
                     const files = document.getElementById("file");
                     const formData = new FormData();
@@ -369,16 +370,14 @@
 
                     fetch("/labapi/submitreport", {
                         method: 'POST',
-                        body: formData,
-                        headers: {
-                        "Content-Type": "multipart/form-data"
-                        }
+                        body: formData
                     })
                     .then((res) => console.log(res))
                     .catch((err) => ("Error occured", err));
+                    */
                     // end of updated code
 
-                    /*
+                    
                     // preventing the duplicate submissions if the current one is in progress
                     if( form.classList.contains( 'is-uploading' ) ) return false;
 
@@ -445,7 +444,7 @@
                             if( !data.success ) errorMsg.textContent = data.error;
                             iframe.parentNode.removeChild( iframe );
                         });
-                    }*/
+                    }
                 });
 
 
