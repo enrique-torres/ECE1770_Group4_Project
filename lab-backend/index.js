@@ -118,6 +118,9 @@ app.use(
     })
 );
 
+// Code to render dynamic HTML templates
+app.set("view engine", "ejs")
+
 app.post("/labClient/login", (req, res) => {
     const bodyContent = req.body;
     const username = bodyContent.username;
@@ -148,4 +151,28 @@ app.post("/patient/consentUpdate/<reportID>", (req, res) => {
 
 app.listen(3000, () => {
  console.log("Server running on port 3000");
+});
+
+// HTML rendering of websites through Embedded JavaScript Templates
+app.get("/", (req, res) => {
+    res.render("clientlogin");
+});
+
+app.get("/consentupdate", (req, res) => {
+    res.render("consentupdate");
+});
+
+app.get("/submitreport", (req, res) => {
+    res.render("submitreport");
+});
+
+app.get("/success", (req, res) => {
+    res.render("successaccessconsent");
+});
+
+app.get("/trackreports", (req, res) => {
+    // example code to get several track reports dynamically updated
+    const reports = [{"report_id":123, "patient_id":"ABC", "report_status":"Pending"}, {"report_id":456, "patient_id":"DEF", "report_status":"Ready"}, {"report_id":789, "patient_id":"GHI", "report_status":"Pending"}]
+
+    res.render("trackreports", {reports});
 });
