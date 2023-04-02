@@ -92,6 +92,31 @@ class AssetTransfer extends Contract {
         return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
     }
 
+    // UpdateAsset updates an existing asset in the world state with provided parameters.
+    async UpdateAssetWithAccessorId(ctx, id, accessorID) {
+        const exists = await this.AssetExists(ctx, id);
+        if (!exists) {
+            throw new Error(`The asset ${id} does not exist`);
+        }
+	const array_accessor = accessorID.split(",");
+
+	const assetString = await this.ReadAsset(ctx, id);
+        if (assetString.length == 0){
+            return "";
+        }
+        const asset = JSON.parse(assetString);
+        const array_medical = asset.MedicalRecords;
+    
+        // overwriting original asset with new asset
+        const updatedAsset = {
+            RecordID: id,
+            AccessorID: array_accessor,
+            MedicalRecords: array_medical,
+    	};
+        // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
+        return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
+    }
+    
     // DeleteAsset deletes an given asset from the world state.
     async DeleteAsset(ctx, id) {
         const exists = await this.AssetExists(ctx, id);
@@ -107,16 +132,6 @@ class AssetTransfer extends Contract {
         return assetJSON && assetJSON.length > 0;
     }
 
-    // TransferAsset updates the owner field of asset with given id in the world state.
-    async TransferAsset(ctx, id, newOwner) {
-        const assetString = await this.ReadAsset(ctx, id);
-        const asset = JSON.parse(assetString);
-        const oldOwner = asset.Owner;
-        asset.Owner = newOwner;
-        // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
-        await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return oldOwner;
-    }
 
     // GetAllAssets returns all assets found in the world state.
     async GetAllAssets(ctx) {
