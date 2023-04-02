@@ -11,6 +11,20 @@ const { Gateway, Wallets } = require('fabric-network');
 const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 
+const multer = require("multer");
+var tempReportID = 0;
+var fileID = 0;
+var multerStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads');
+    },
+    filename: function (req, file, cb) {
+      cb(null, tempReportID + '_' + fileID);
+      fileID = fileID + 1;
+    }
+});
+const upload = multer({storage: multerStorage});
+
 const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('../fabric-samples/test-application/javascript/CAUtil.js');
 const { buildCCPOrg1, buildWallet } = require('../fabric-samples/test-application/javascript/AppUtil.js');
 
@@ -109,9 +123,10 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
     }
   });
 
+// --------------------- GENERAL SERVER FUNCTIONS ---------------------
 var app = express();
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 app.use(
     cors({
         origin: 'http://localhost:3000'
@@ -121,45 +136,59 @@ app.use(
 // Code to render dynamic HTML templates
 app.set("view engine", "ejs")
 
-app.post("/labClient/login", (req, res) => {
-    const bodyContent = req.body;
-    const username = bodyContent.username;
-    const passhash = bodyContent.passhash;
-    res.json('Logged in for ${username}');
-});
-
-app.get("/labCLient/trackReports", (req, res) => {
-    res.json(["Report1","Report2","Report3"]);
-});
-
-app.get("/labCLient/getReport/", function(req, res) {
-    const reportId = req.query.reportId;
-    // REST call to the HF client <-- sample app served on another server
-    res.json('Received request for reportID ${reportId}');
-});
-
-app.post("/lab/submitReport", (req, res) => {
-    const bodyContent = req.body;
-    const reportId = req.reportId;
-    const reportContent = req.reportContent;
-    res.json('Submitted report to HF blockchain for reportId: ${reportId}');
-});
-
-app.post("/patient/consentUpdate/<reportID>", (req, res) => {
-    res.json(["Tony","Lisa","Michael","Ginger","Food"]);
-});
-
 app.listen(3000, () => {
- console.log("Server running on port 3000");
+    console.log("Server running on port 3000");
 });
 
+
+// --------------------- REST API RELATED FUNCTIONS ---------------------
+app.post("/labapi/login", (req, res) => {
+    const bodyContent = req.body;
+    // variables from login form
+    const username = bodyContent.username;
+    const password = bodyContent.password;
+    // redirect to report tracking site
+    res.redirect('/trackreports/' + username)
+});
+
+app.get("/labapi/getreport/:reportID", function(req, res) {
+    const reportId = req.params["reportID"];
+    // REST call to the HF client <-- sample app served on another server
+    res.json('Received request for reportID ' + reportId);
+});
+
+app.route("/labapi/submitreport")
+    .post(upload.any(), (req, res, err) => {
+        if (err) {
+            console.log("Error uploading file " + err);
+        }
+        else {
+            console.log(req.files);
+            res.status(200).json({message: "Successfully Uploaded", status: 200});
+        }
+});
+
+app.post("/labapi/consentupdate/:reportID", (req, res) => {
+    const reportId = req.params["reportID"];
+    const bodyContent = req.body;
+    console.debug("Received consent update for reportID " + reportId);
+    // client usernames is an iterable array that contains all the allowed accessor IDs or usernames
+    console.debug("Received the following consented clients: " + bodyContent.clientUsernames)
+    //if successful update of ledger, tell the patient that the consent was updated
+    res.sendStatus(200);
+});
+
+// --------------------- RENDER RELATED FUNCTIONS ---------------------
 // HTML rendering of websites through Embedded JavaScript Templates
 app.get("/", (req, res) => {
     res.render("clientlogin");
 });
 
-app.get("/consentupdate", (req, res) => {
-    res.render("consentupdate");
+app.get("/consentupdate/:reportID", (req, res) => {
+    const reportID = req.params["reportID"];
+    // TODO: get real list of clients and their visible names
+    const clientsList = [{"clientUsername":"username1", "clientVisibleName":"Dr. Mike Hunt"}, {"clientUsername":"username2", "clientVisibleName":"Dr. Ben Dover"}, {"clientUsername":"username3", "clientVisibleName":"Neil Down Insurances"}]
+    res.render("consentupdate", {reportID, clientsList});
 });
 
 app.get("/submitreport", (req, res) => {
@@ -170,9 +199,12 @@ app.get("/success", (req, res) => {
     res.render("successaccessconsent");
 });
 
-app.get("/trackreports", (req, res) => {
+// Function that handles rendering of report tracking for the client
+app.get("/trackreports/:accessorID", (req, res) => {
     // example code to get several track reports dynamically updated
+    // TODO: we need a function to gather this information from the blockchain
     const reports = [{"report_id":123, "patient_id":"ABC", "report_status":"Pending"}, {"report_id":456, "patient_id":"DEF", "report_status":"Ready"}, {"report_id":789, "patient_id":"GHI", "report_status":"Pending"}, {"report_id":101112, "patient_id":"ABC", "report_status":"Pending"}]
+    const accessorID = req.params["accessorID"]
 
-    res.render("trackreports", {reports});
+    res.render("trackreports", {reports, accessorID});
 });

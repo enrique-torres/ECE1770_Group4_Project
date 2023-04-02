@@ -116,27 +116,14 @@
         <h1><span class="black">HyperSecure</span> <span class="blue">Labs</span></h1>
     </div>
     <div class="container">
-      <h2>Available Reports For You</h2>
+      <h2>Available Reports For You, <%=accessorID%></h2>
       <ul id="report-list">
         <% reports.forEach(function(report) { %>
         <li class="report ready">
           <div class="report-info">
             <h3>Report ID: <%=report.report_id%></h3>
-            <p>Patient ID: <%=report.patient_id%></p>
           </div>
-          <div class="report-status">
-            <%if (report.report_status == "Ready") { %>
-            <div class="status-dot green"></div>
-            <% } else{ %> 
-            <div class="status-dot red"></div>
-            <% } %>
-            <p><%=report.report_status%></p>
-          </div>
-          <%if (report.report_status == "Ready") { %>
           <button class="report-btn">Request</button>
-          <% } else{ %> 
-          <button class="report-btn" disabled>Request</button>
-          <% } %>
         </li>
         <% })%>
       </ul>
