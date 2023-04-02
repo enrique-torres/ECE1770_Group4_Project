@@ -83,7 +83,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
     } 
     else {        
         var salt = bcrypt.genSaltSync(10);
-        
+        //Add a field VisibleName (what will be shown in the update consent html), delete the Email field, delete Date fields
         db.run(`CREATE TABLE Users (
             Id INTEGER PRIMARY KEY AUTOINCREMENT,
             Username text, 
@@ -172,7 +172,7 @@ app.get("/success", (req, res) => {
 
 app.get("/trackreports", (req, res) => {
     // example code to get several track reports dynamically updated
-    const reports = [{"report_id":123, "patient_id":"ABC", "report_status":"Pending"}, {"report_id":456, "patient_id":"DEF", "report_status":"Ready"}, {"report_id":789, "patient_id":"GHI", "report_status":"Pending"}]
+    const reports = [{"report_id":123, "patient_id":"ABC", "report_status":"Pending"}, {"report_id":456, "patient_id":"DEF", "report_status":"Ready"}, {"report_id":789, "patient_id":"GHI", "report_status":"Pending"}, {"report_id":101112, "patient_id":"ABC", "report_status":"Pending"}]
 
     res.render("trackreports", {reports});
 });
