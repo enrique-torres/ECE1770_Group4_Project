@@ -1,19 +1,22 @@
 'use strict';
 
-const express = require('express'); // Using the express framework 
+// Basic Web Server imports and global variables
+const express = require('express'); // Using the express framework
 require("dotenv").config(); // Get environment variables from .env file(s)
 var sqlite3 = require('sqlite3').verbose()
 const cors = require('cors'); 
 var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
 var bodyParser = require('body-parser');
+
+// Hyperledger imports and gobal variables
 const { Gateway, Wallets } = require('fabric-network');
 const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 
 const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('../fabric-samples/test-application/javascript/CAUtil.js');
 const { buildCCPOrg1, buildWallet } = require('../fabric-samples/test-application/javascript/AppUtil.js');
-
+const { emitWarning } = require('process');
 
 const channelName = 'channel1';
 const chaincodeName = 'basic';
@@ -21,6 +24,7 @@ const mspOrg1 = 'Org1MSP';
 const walletPath = path.join(__dirname, 'wallet');
 const org1UserId = 'appUser';
 
+// Hyperledger Functions
 async function initializegateway() {
 try {
 		// build an in memory object with the network configuration (also known as a connection profile)
@@ -73,11 +77,14 @@ try {
 }
 
 initializegateway();
+
+// LabClient user database
 const DBSOURCE = "usersdb.sqlite";
 
 let db = new sqlite3.Database(DBSOURCE, (err) => {
     if (err) {
       // Cannot open database
+      console.log("Error opening db. The error is as follows:");
       console.error(err.message)
       throw err
     } 
@@ -86,29 +93,30 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         //Add a field VisibleName (what will be shown in the update consent html), delete the Email field, delete Date fields
         db.run(`CREATE TABLE Users (
             Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            Username text, 
-            Email text, 
+            Username text,
             Password text,             
-            Salt text,    
-            Token text,
-            DateLoggedIn DATE,
-            DateCreated DATE
+            Salt text,
+            Token text
             )`,
         (err) => {
             if (err) {
                 // Table already created
+                console.log("Users table is already created");
             } else{
                 // Table just created, creating some rows
-                var insert = 'INSERT INTO Users (Username, Email, Password, Salt, DateCreated) VALUES (?,?,?,?,?)'
-                db.run(insert, ["user1", "user1@example.com", bcrypt.hashSync("user1", salt), salt, Date('now')])
-                db.run(insert, ["user2", "user2@example.com", bcrypt.hashSync("user2", salt), salt, Date('now')])
-                db.run(insert, ["user3", "user3@example.com", bcrypt.hashSync("user3", salt), salt, Date('now')])
-                db.run(insert, ["user4", "user4@example.com", bcrypt.hashSync("user4", salt), salt, Date('now')])
+                var insert = 'INSERT INTO Users (Username, Password, Salt) VALUES (?,?,?)'
+                db.run(insert, ["user1", bcrypt.hashSync("user1", salt), salt])
+                db.run(insert, ["user2", bcrypt.hashSync("user2", salt), salt])
+                db.run(insert, ["user3", bcrypt.hashSync("user3", salt), salt])
+                db.run(insert, ["user4", bcrypt.hashSync("user4", salt), salt])
             }
         });  
     }
   });
 
+module.exports = db;
+
+// Setup express server
 var app = express();
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -121,36 +129,98 @@ app.use(
 // Code to render dynamic HTML templates
 app.set("view engine", "ejs")
 
-app.post("/labClient/login", (req, res) => {
-    const bodyContent = req.body;
-    const username = bodyContent.username;
-    const passhash = bodyContent.passhash;
-    res.json('Logged in for ${username}');
+// Callback function to validate JWT token
+const authenticateJWT = (req, res, next) => {
+  const token =
+    req.body.token || req.query.token || req.headers["x-access-token"];
+
+  if (!token) {
+    return res.status(403).send("A token is required for authentication");
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.TOKEN_KEY);
+    req.user = decoded;
+  } catch (err) {
+    console.error("Could not validate JWT token. The error:");
+    console.error(err);
+    return res.status(401).send("Invalid Token");
+  }
+  return next();
+};
+
+module.exports = authenticateJWT;
+
+// Lab backend URLs
+app.post("/labClient/login", async (req, res) => {
+    try {      
+      const { username, password } = req.body;
+          // Make sure there is an Email and Password in the request
+          if (!(username && password)) {
+              res.status(400).send("All input is required");
+          }
+              
+          let user = [];
+          
+          var sql = "SELECT * FROM Users WHERE Username = ?";
+          db.all(sql, username, function(err, rows) {
+              if (err){
+                  console.log(err);
+                  res.status(400).json({"error": err.message})
+                  return;
+              }
+  
+              rows.forEach(function (row) {
+                  user.push(row);                
+              })
+              
+              var PHash = bcrypt.hashSync(password, user[0].Salt);
+         
+              if(PHash === user[0].Password) {
+                  // * CREATE JWT TOKEN
+                  const token = jwt.sign( {user_id: user[0].Id, username: user[0].Username }, process.env.TOKEN_KEY,
+                      {
+                        expiresIn: "1h", // 60s = 60 seconds - (60m = 60 minutes, 2h = 2 hours, 2d = 2 days)
+                      }  
+                  );
+  
+                  user[0].Token = token;
+  
+              } else {
+                  return res.status(400).send("No Match");          
+              }
+  
+             return res.status(200).send(user);                
+          });	
+      
+      } catch (err) {
+        console.log(err);
+      }    
+  });
+
+app.post("/labClient/login/test", authenticateJWT, (req, res) => {
+    res.status(200).send('Logged in!');
 });
 
-app.get("/labCLient/trackReports", (req, res) => {
-    res.json(["Report1","Report2","Report3"]);
+app.get("/labCLient/trackReports", authenticateJWT, (req, res) => {
+    const username = req.user.username;
+    res.json(`Tracking list of reports for labClient ${username}`);
 });
 
-app.get("/labCLient/getReport/", function(req, res) {
+app.get("/labCLient/getReport", authenticateJWT, function(req, res) {
     const reportId = req.query.reportId;
-    // REST call to the HF client <-- sample app served on another server
-    res.json('Received request for reportID ${reportId}');
+    const username = req.user.username;
+    res.json(`Getting report: ${reportId} for labClient: ${username}`);
 });
 
 app.post("/lab/submitReport", (req, res) => {
     const bodyContent = req.body;
-    const reportId = req.reportId;
-    const reportContent = req.reportContent;
-    res.json('Submitted report to HF blockchain for reportId: ${reportId}');
+    const reportId = bodyContent.reportId;
+    const reportContent = bodyContent.reportContent;
+    res.json(`Submitted report to HF blockchain for reportId: ${reportId}`);
 });
 
 app.post("/patient/consentUpdate/<reportID>", (req, res) => {
     res.json(["Tony","Lisa","Michael","Ginger","Food"]);
-});
-
-app.listen(3000, () => {
- console.log("Server running on port 3000");
 });
 
 // HTML rendering of websites through Embedded JavaScript Templates
@@ -176,3 +246,7 @@ app.get("/trackreports", (req, res) => {
 
     res.render("trackreports", {reports});
 });
+
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+ });
