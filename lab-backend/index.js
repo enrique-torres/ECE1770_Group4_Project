@@ -31,21 +31,6 @@ let ccp = null;
 let caClient = null;
 let wallet = null;
 
-// File uploading imports and global variables
-const multer = require("multer");
-var tempReportID = 0;
-var fileID = 0;
-var multerStorage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, 'uploads');
-	},
-	filename: function (req, file, cb) {
-		cb(null, tempReportID + '_' + fileID);
-		fileID = fileID + 1;
-	}
-});
-const upload = multer({ storage: multerStorage });
-
 try {
 	// build an in memory object with the network configuration (also known as a connection profile)
 	ccp = buildCCPOrg1();
@@ -286,6 +271,22 @@ app.use(
 	})
 );
 
+// File uploading imports and global variables
+const multer = require("multer");
+var tempReportID = 0;
+var fileID = 0;
+var multerStorage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, 'uploads');
+	},
+	filename: function (req, file, cb) {
+		cb(null, tempReportID + '_' + fileID);
+		fileID = fileID + 1;
+	}
+});
+const upload = multer({ storage: multerStorage });
+
+
 // Code to render dynamic HTML templates
 app.set("view engine", "ejs")
 
@@ -301,6 +302,7 @@ const authenticateJWT = (req, res, next) => {
 	if (!token) {
 		//var error_message = "A token is required for authentication";
 		res.redirect("/" + "?error=1");
+		return;
 	}
 	try {
 		const decoded = jwt.verify(token, process.env.TOKEN_KEY);
@@ -310,6 +312,7 @@ const authenticateJWT = (req, res, next) => {
 		console.error(err);
 		//var error_message = "Invalid Token";
 		res.redirect("/" + "?error=2");
+		return;
 	}
 	return next();
 };
@@ -385,15 +388,16 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
 });
 
 app.route("/labapi/submitreport")
-	.post(upload.any(), (req, res, err) => {
-		if (err) {
-			console.log("Error uploading file " + err);
-			res.status(400).json({ message: "Error in upload", status: 400 });
-			return;
+	.post(upload.any(), (req, res, next) => {
+		if (next) {
+			console.log("Next function called");
+			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
+			//res.status(400).json({ message: "Error in upload", status: 400 });
+			return next();
 		}
 		else {
 			console.log(req.files);
-			res.status(200).json({ message: "Successfully Uploaded", status: 200 });
+			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
 			return;
 		}
 	});
