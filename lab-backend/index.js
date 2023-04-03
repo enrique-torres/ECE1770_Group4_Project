@@ -27,6 +27,41 @@ const walletPath = path.join(__dirname, 'wallet');
 const org1UserId = 'appUser';
 var gatewayinitialized = false;
 
+// --------------- Encryption Decryption helper functions -------------------------------
+const crypto = require('crypto');
+const encryptAlgorithm = 'aes-256-ctr'; //Using AES encryption
+
+// Output: b64 encoding of encrypted file content 
+const encrypt = (filePath) => {
+	const fileBuffer = fs.readFileSync(filePath)
+
+	const key = Buffer.from(process.env.ENCRYPT_AES_KEY, 'base64');
+	// console.log(`The key: ${key}`);
+	// Create an initialization vector
+	const iv = crypto.randomBytes(16);
+	// Create a new cipher using the algorithm, key, and iv
+	const cipher = crypto.createCipheriv(encryptAlgorithm, key, iv);
+	// Create the new (encrypted) buffer
+	const result = Buffer.concat([iv, cipher.update(fileBuffer), cipher.final()]);
+	return result.toString('base64');
+};
+
+// This function writes decrypted content to provided filePath
+const decrypt = (encryptedB64, outputFilePath) => {
+	const key = Buffer.from(process.env.ENCRYPT_AES_KEY, 'base64');
+	var encryptedBuf = Buffer.from(encryptedB64, 'base64');
+
+ 	// Get the iv: the first 16 bytes
+ 	const iv = encryptedBuf.slice(0, 16);
+ 	// Get the rest
+ 	encryptedBuf = encryptedBuf.slice(16);
+ 	// Create a decipher
+ 	const decipher = crypto.createDecipheriv(encryptAlgorithm, key, iv);
+ 	// Actually decrypt it
+	
+ 	const result = Buffer.concat([decipher.update(encryptedBuf), decipher.final()]);
+	fs.writeFileSync(outputFilePath, result);
+};
 
 // Create a new gateway instance for interacting with the fabric network.
 const gateway = new Gateway();
