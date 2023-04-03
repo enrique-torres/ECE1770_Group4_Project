@@ -8,6 +8,7 @@ const cors = require('cors');
 var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
 var bodyParser = require('body-parser');
+const fs = require("fs");
 const path = require('path');
 const { emitWarning } = require('process');
 // Cookies handling package
@@ -275,16 +276,30 @@ app.use(
 app.use(cookieParser());
 
 // File uploading imports and global variables
+// report ID handling
+var globalReportID = 0;
+var globalFileID = 0;
+fs.stat('last_report_id.txt', function(err, stat) {
+	if (err == null) {
+		const data = fs.readFileSync('last_report_id.txt', 'utf8');
+		globalReportID = parseInt(data);
+	} else if (err.code === 'ENOENT') {
+	  // file does not exist
+	  fs.writeFileSync('last_report_id.txt', "0\n");
+	} else {
+	  console.log('Unrecognized error when opening report ID log: ', err.code);
+	}
+});
+
+
 const multer = require("multer");
-var tempReportID = 0;
-var fileID = 0;
 var multerStorage = multer.diskStorage({
 	destination: function (req, file, cb) {
 		cb(null, 'uploads');
 	},
 	filename: function (req, file, cb) {
-		cb(null, tempReportID + '_' + fileID);
-		fileID = fileID + 1;
+		cb(null, globalReportID + '_' + globalFileID);
+		globalFileID = globalFileID + 1;
 	}
 });
 const upload = multer({ storage: multerStorage });
@@ -408,6 +423,9 @@ app.route("/labapi/submitreport")
 			console.log("Next function called");
 			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
 			//res.status(400).json({ message: "Error in upload", status: 400 });
+			globalFileID = 0; // reset the file IDs for the next report
+			globalReportID = globalReportID + 1; // increase the global report ID
+			fs.writeFileSync('last_report_id.txt', globalReportID.toString() + "\n");
 			return next();
 		}
 		else {
