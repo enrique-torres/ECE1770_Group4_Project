@@ -244,6 +244,60 @@
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
+        .email-container {
+            width: 100%;
+            max-width: 660px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin: 10px 10px 10px 0px;
+            padding: 20px 10px 10px 10px;
+        }
+        .textbox {
+        position: relative;
+        padding: 10px 10px 10px 10px;
+        }
+
+        .textbox input {
+        width: 100%;
+
+        font-size: 16px;
+        border: none;
+        border-bottom: 2px solid #999;
+        outline: none;
+        background: transparent;
+        }
+
+        .textbox label {
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 10px;
+        font-size: 16px;
+        color: #999;
+        pointer-events: none;
+        transition: 0.5s;
+        }
+        .textbox input:focus ~ label,
+        .textbox input:valid ~ label {
+        top: -20px;
+        font-size: 12px;
+        color: #0073aa;
+        }
+
+        .textbox input:focus ~ .bar:before,
+        .textbox input:focus ~ .bar:after {
+        width: 50%;
+        }
+
+        .textbox input:focus ~ .highlight {
+        animation: input-highlighter 0.3s ease;
+        }
+
+        .textbox input:valid ~ .highlight {
+        animation: input-highlighter 0.3s ease;
+        }
 	</style>
 	<script>(function(e,t,n){var r=e.querySelectorAll("html")[0];r.className=r.className.replace(/(^|\s)no-js(\s|$)/,"$1js$2")})(document,window,0);</script>
 </head>
@@ -253,6 +307,14 @@
         <h1><span class="black">HyperSecure</span> <span class="blue">Labs</span></h1>
     </div>
     <div class="container" role="main">
+        <div class="email-container">
+            <div class="textbox">
+                <i class="fas fa-user"></i>
+                <input type="text" name="email" id="email" form="filesubmissionform" required>
+                <label for="email">Patient E-mail</label>
+                <div class="bar"></div>
+            </div>
+        </div>
         <form id="filesubmissionform" method="post" action="/labapi/submitreport" enctype="multipart/form-data" novalidate class="box">
 
             <div class="box__input">
