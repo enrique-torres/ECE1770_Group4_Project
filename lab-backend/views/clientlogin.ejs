@@ -37,6 +37,12 @@
         font-weight: 500;
         margin-top: 0;
       }
+      .login-box h2 {
+        text-align: center;
+        font-weight: 500;
+        margin-top: 0;
+        color: red;
+      }
       .btn {
         width: 100%;
         background-color: #0073aa;
@@ -123,6 +129,9 @@
     </div>
     <div class="login-box">
       <h1>Report Access Login</h1>
+      <% if(locals.errorMessage){ %>
+      <h2><%=errorMessage%></h2>
+      <% } %>
       <form action="/labapi/login" method="post">
         <div class="textbox">
           <i class="fas fa-user"></i>
