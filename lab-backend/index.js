@@ -8,8 +8,11 @@ const cors = require('cors');
 var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
 var bodyParser = require('body-parser');
+const fs = require("fs");
 const path = require('path');
 const { emitWarning } = require('process');
+// Cookies handling package
+var cookieParser = require('cookie-parser');
 
 // Hyperledger imports and gobal variables
 const { Gateway, Wallets } = require('fabric-network');
@@ -229,6 +232,7 @@ const DBSOURCE = "usersdb.sqlite";
 let db = new sqlite3.Database(DBSOURCE, (err) => {
 	if (err) {
 		// Cannot open database
+		console.log("Error opening db. The error is as follows:");
 		console.error(err.message)
 		throw err
 	}
@@ -238,23 +242,22 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
 		db.run(`CREATE TABLE Users (
 			Id INTEGER PRIMARY KEY AUTOINCREMENT,
 			Username text, 
-			Email text, 
+			VisibleName text, 
 			Password text,             
 			Salt text,    
-			Token text,
-			DateLoggedIn DATE,
-			DateCreated DATE
+			Token text
 			)`,
 			(err) => {
 				if (err) {
 					// Table already created
 				} else {
 					// Table just created, creating some rows
-					var insert = 'INSERT INTO Users (Username, Email, Password, Salt, DateCreated) VALUES (?,?,?,?,?)'
-					db.run(insert, ["user1", "user1@example.com", bcrypt.hashSync("user1", salt), salt, Date('now')])
-					db.run(insert, ["user2", "user2@example.com", bcrypt.hashSync("user2", salt), salt, Date('now')])
-					db.run(insert, ["user3", "user3@example.com", bcrypt.hashSync("user3", salt), salt, Date('now')])
-					db.run(insert, ["user4", "user4@example.com", bcrypt.hashSync("user4", salt), salt, Date('now')])
+					var insert = 'INSERT INTO Users (Username, VisibleName, Password, Salt) VALUES (?,?,?,?)'
+					db.run(insert, ["user1", "Dr. Marcus Philippe", bcrypt.hashSync("user1", salt), salt])
+					db.run(insert, ["user2", "Dr. Sandra Sanchez", bcrypt.hashSync("user2", salt), salt])
+					db.run(insert, ["user3", "NonFungibleTrials S.A.", bcrypt.hashSync("user3", salt), salt])
+					db.run(insert, ["user4", "NoPayJose Insurances", bcrypt.hashSync("user4", salt), salt])
+					db.run(insert, ["user5", "National Statistical Office", bcrypt.hashSync("user5", salt), salt])
 				}
 			});
 	}
@@ -270,18 +273,33 @@ app.use(
 		origin: 'http://localhost:3000'
 	})
 );
+app.use(cookieParser());
 
 // File uploading imports and global variables
+// report ID handling
+var globalReportID = 0;
+var globalFileID = 0;
+fs.stat('last_report_id.txt', function(err, stat) {
+	if (err == null) {
+		const data = fs.readFileSync('last_report_id.txt', 'utf8');
+		globalReportID = parseInt(data);
+	} else if (err.code === 'ENOENT') {
+	  // file does not exist
+	  fs.writeFileSync('last_report_id.txt', "0\n");
+	} else {
+	  console.log('Unrecognized error when opening report ID log: ', err.code);
+	}
+});
+
+
 const multer = require("multer");
-var tempReportID = 0;
-var fileID = 0;
 var multerStorage = multer.diskStorage({
 	destination: function (req, file, cb) {
 		cb(null, 'uploads');
 	},
 	filename: function (req, file, cb) {
-		cb(null, tempReportID + '_' + fileID);
-		fileID = fileID + 1;
+		cb(null, globalReportID + '_' + globalFileID);
+		globalFileID = globalFileID + 1;
 	}
 });
 const upload = multer({ storage: multerStorage });
@@ -296,8 +314,13 @@ app.listen(3000, () => {
 
 // Callback to handle JWT token and to validate it
 const authenticateJWT = (req, res, next) => {
-	const token =
-		req.body.token || req.query.token || req.headers["x-access-token"];
+	var token;
+	if ('token' in req.cookies) {
+		token = req.body.token || req.query.token || req.headers["x-access-token"] || req.cookies['token'];
+	}
+	else {
+		token = req.body.token || req.query.token || req.headers["x-access-token"]
+	}
 
 	if (!token) {
 		//var error_message = "A token is required for authentication";
@@ -307,6 +330,7 @@ const authenticateJWT = (req, res, next) => {
 	try {
 		const decoded = jwt.verify(token, process.env.TOKEN_KEY);
 		req.user = decoded;
+		console.log(req.user);
 	} catch (err) {
 		console.error("Could not validate JWT token. The error:");
 		console.error(err);
@@ -371,8 +395,10 @@ app.post("/labapi/login", async (req, res) => {
 			}
 
 			// redirect to report tracking site
-      console.log(req.user.Token);
-			res.redirect('/trackreports/' + username + "?token=" + user[0].Token);
+      		//console.log(req.user.Token);
+			res.cookie('token', user[0].Token);
+			console.log("Logged in user " + user[0].Username + " with token " + user[0].Token);
+			res.redirect('/trackreports/' + username);
 			return;
 		});
 
@@ -391,10 +417,15 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
 
 app.route("/labapi/submitreport")
 	.post(upload.any(), (req, res, next) => {
+		const email = req.body.email;
+		console.log("Sent e-mail with consent update link to: " + email);
 		if (next) {
 			console.log("Next function called");
 			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
 			//res.status(400).json({ message: "Error in upload", status: 400 });
+			globalFileID = 0; // reset the file IDs for the next report
+			globalReportID = globalReportID + 1; // increase the global report ID
+			fs.writeFileSync('last_report_id.txt', globalReportID.toString() + "\n");
 			return next();
 		}
 		else {
@@ -408,7 +439,7 @@ app.post("/labapi/consentupdate/:reportID", (req, res) => {
 	const reportId = req.params["reportID"];
 	const bodyContent = req.body;
 	// TODO: Actually update consent
-	testConsent();
+	//testConsent();
 	console.debug("Received consent update for reportID " + reportId);
 	// client usernames is an iterable array that contains all the allowed accessor IDs or usernames
 	console.debug("Received the following consented clients: " + bodyContent.clientUsernames)
@@ -448,9 +479,31 @@ app.get("/", (req, res) => {
 
 app.get("/consentupdate/:reportID", (req, res) => {
 	const reportID = req.params["reportID"];
-	// TODO: get real list of clients and their visible names
-	const clientsList = [{ "clientUsername": "username1", "clientVisibleName": "Dr. Mike Hunt" }, { "clientUsername": "username2", "clientVisibleName": "Dr. Ben Dover" }, { "clientUsername": "username3", "clientVisibleName": "Neil Down Insurances" }]
-	res.render("consentupdate", { reportID, clientsList });
+	let clientsList = []
+	try {
+		var sql = "SELECT * FROM Users";
+		db.all(sql, function (err, rows) {
+			if (err) {
+				console.log(err);
+				return;
+			}
+
+			rows.forEach(function (row) {
+				var clientInfo = {"clientUsername": row.Username, "clientVisibleName": row.VisibleName};
+				clientsList.push(clientInfo);
+			})
+			console.log(rows);
+
+			if (clientsList.length == 0) {
+				//var error_message = "User does not exist";
+				console.log("No clients found in database");
+				return;
+			}
+			res.render("consentupdate", { reportID, clientsList });
+		});
+	} catch (err) {
+		console.log(err);
+	}
 	return;
 });
 
