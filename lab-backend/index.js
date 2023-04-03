@@ -299,8 +299,8 @@ const authenticateJWT = (req, res, next) => {
 		req.body.token || req.query.token || req.headers["x-access-token"];
 
 	if (!token) {
-		var error = "A token is required for authentication";
-		res.redirect("/", {error})
+		//var error_message = "A token is required for authentication";
+		res.redirect("/" + "?error=1");
 	}
 	try {
 		const decoded = jwt.verify(token, process.env.TOKEN_KEY);
@@ -308,8 +308,8 @@ const authenticateJWT = (req, res, next) => {
 	} catch (err) {
 		console.error("Could not validate JWT token. The error:");
 		console.error(err);
-		var error = "Invalid Token";
-		res.redirect("/", {error})
+		//var error_message = "Invalid Token";
+		res.redirect("/" + "?error=2");
 	}
 	return next();
 };
@@ -323,6 +323,7 @@ app.post("/labapi/login", async (req, res) => {
 		// Make sure there is an Email and Password in the request
 		if (!(username && password)) {
 			res.status(400).send("All input is required");
+			return;
 		}
 
 		let user = [];
@@ -330,15 +331,22 @@ app.post("/labapi/login", async (req, res) => {
 		var sql = "SELECT * FROM Users WHERE Username = ?";
 		db.all(sql, username, function (err, rows) {
 			if (err) {
-				var error = "Critical server error";
+				//var error_message = "Critical server error";
 				console.log(err);
-				res.redirect("/", {error});
+				res.redirect("/" + "?error=3");
 				return;
 			}
 
 			rows.forEach(function (row) {
 				user.push(row);
 			})
+
+			if (user.length == 0) {
+				//var error_message = "User does not exist";
+				console.log("User does not exist");
+				res.redirect("/" + "?error=4");
+				return;
+			}
 
 			var PHash = bcrypt.hashSync(password, user[0].Salt);
 
@@ -353,13 +361,15 @@ app.post("/labapi/login", async (req, res) => {
 				user[0].Token = token;
 
 			} else {
-				var error = "User not found";
-				console.log("User was not found");
-				res.redirect("/", {error});
+				//var error_message = "Password is incorrect";
+				console.log("Password is incorrect");
+				res.redirect("/" + "?error=5");
+				return;
 			}
 
 			// redirect to report tracking site
-			res.redirect('/trackreports/' + username, {user : user[0]});
+			res.redirect('/trackreports/' + username + "?token=" + user[0].Token);
+			return;
 		});
 
 	} catch (err) {
@@ -371,6 +381,7 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
 	const reportId = req.params["reportID"];
 	// REST call to the HF client <-- sample app served on another server
 	res.json('Received request for reportID ' + reportId);
+	return;
 });
 
 app.route("/labapi/submitreport")
@@ -378,10 +389,12 @@ app.route("/labapi/submitreport")
 		if (err) {
 			console.log("Error uploading file " + err);
 			res.status(400).json({ message: "Error in upload", status: 400 });
+			return;
 		}
 		else {
 			console.log(req.files);
 			res.status(200).json({ message: "Successfully Uploaded", status: 200 });
+			return;
 		}
 	});
 
@@ -395,12 +408,36 @@ app.post("/labapi/consentupdate/:reportID", (req, res) => {
 	console.debug("Received the following consented clients: " + bodyContent.clientUsernames)
 	//if successful update of ledger, tell the patient that the consent was updated
 	res.sendStatus(200);
+	return;
 });
 
 // --------------------- RENDER RELATED FUNCTIONS ---------------------
 // HTML rendering of websites through Embedded JavaScript Templates
 app.get("/", (req, res) => {
-	res.render("clientlogin");
+	var errorCode = parseInt(req.query.error);
+	var error = "";
+	switch (errorCode) {
+		case 1:
+			error = "Session expired. Re-login is required";
+			break;
+		case 2:
+			error = "Session error. Contact administrator";
+			break;
+		case 3:
+			error = "Critical server error";
+			break;
+		case 4:
+			error = "User does not exist";
+			break;
+		case 5:
+			error = "Password is incorrect";
+			break;
+		default:
+			break;
+	}
+	console.log(error);
+	res.render("clientlogin", {errorMessage : error});
+	return;
 });
 
 app.get("/consentupdate/:reportID", (req, res) => {
@@ -408,14 +445,17 @@ app.get("/consentupdate/:reportID", (req, res) => {
 	// TODO: get real list of clients and their visible names
 	const clientsList = [{ "clientUsername": "username1", "clientVisibleName": "Dr. Mike Hunt" }, { "clientUsername": "username2", "clientVisibleName": "Dr. Ben Dover" }, { "clientUsername": "username3", "clientVisibleName": "Neil Down Insurances" }]
 	res.render("consentupdate", { reportID, clientsList });
+	return;
 });
 
 app.get("/submitreport", (req, res) => {
 	res.render("submitreport");
+	return;
 });
 
 app.get("/success", (req, res) => {
 	res.render("successaccessconsent");
+	return;
 });
 
 // Function that handles rendering of report tracking for the client
@@ -426,9 +466,11 @@ app.get("/trackreports/:accessorID", authenticateJWT, (req, res) => {
 	const accessorID = req.params["accessorID"]
 
 	res.render("trackreports", { reports, accessorID });
+	return;
 });
 
 // --------------------- API TEST FUNCTIONS ---------------------
 app.post("/labapi/login/test", authenticateJWT, (req, res) => {
     res.status(200).send('Logged in!');
+	return;
 });
