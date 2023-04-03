@@ -371,6 +371,7 @@ app.post("/labapi/login", async (req, res) => {
 			}
 
 			// redirect to report tracking site
+      console.log(req.user.Token);
 			res.redirect('/trackreports/' + username + "?token=" + user[0].Token);
 			return;
 		});
@@ -382,6 +383,7 @@ app.post("/labapi/login", async (req, res) => {
 
 app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
 	const reportId = req.params["reportID"];
+  // username = req.user.username;
 	// REST call to the HF client <-- sample app served on another server
 	res.json('Received request for reportID ' + reportId);
 	return;
