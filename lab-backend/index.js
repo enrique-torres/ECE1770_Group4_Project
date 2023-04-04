@@ -40,9 +40,9 @@ const encryptbuffer = (fileBuffer) => {
 	// Create an initialization vector
 	const iv = crypto.randomBytes(16);
 	// Create a new cipher using the algorithm, key, and iv
-	console.log('to create new cipher');
+	
 	const cipher = crypto.createCipheriv(encryptAlgorithm, key, iv);
-	console.log('to concatenate cipher');
+	
 	// Create the new (encrypted) buffer
 	const result = Buffer.concat([iv, cipher.update(fileBuffer), cipher.final()]);
 	return result.toString('base64');
@@ -170,8 +170,14 @@ async function getRecordFromLedger(recordid)
 		console.log('\n--> Evaluate Transaction: ReadAsset, function returns an asset with a given reportID');
 		let result = await contract.evaluateTransaction('ReadAsset', recordid);
 		console.log(`*** Result: ${prettyJSONString(result.toString())}`);	
+	        let parsed = JSON.parse(result.toString());
+	        console.log(parsed.MedicalRecords.length);
+	        console.log(parsed.MedicalRecords[0]);
+	      
+	} catch (error) {
+		console.error(`******** FAILED to read asset: ${error}`);
 	
-	} finally {
+	}finally {
 		// Disconnect from the gateway when the application is closing
 		// This will close all connections to the network
 		gateway.disconnect();
@@ -202,7 +208,10 @@ async function getRecordFromLedgerWithAccessorID(recordid, accessorid)
 		let result = await contract.evaluateTransaction('ReadAssetBasedOnAccessorId', recordid, accessorid);
 		console.log(`*** Result: ${prettyJSONString(result.toString())}`);	
 	
-	} finally {
+	} catch (error) {
+		console.error(`******** FAILED to read asset based on accessor id: ${error}`);
+	
+	}finally {
 		// Disconnect from the gateway when the application is closing
 		// This will close all connections to the network
 		gateway.disconnect();
@@ -233,7 +242,10 @@ async function updateLedgerWithAccessorID(recordid, accessorid)
 	    await contract.submitTransaction('UpdateAssetWithAccessorId', recordid, accessorid);
 		console.log('******** updated asset');	
 	
-	} finally {
+	} catch (error) {
+		console.error(`******** FAILED to update asset: ${error}`);
+	
+	}finally {
 		// Disconnect from the gateway when the application is closing
 		// This will close all connections to the network
 		gateway.disconnect();
@@ -264,7 +276,11 @@ async function addLedgerEntry(recordid, accessorid, medicalrecordarray)
 	    await contract.submitTransaction('CreateAsset', recordid, accessorid, medicalrecordarray);
 		console.log('******** created asset');	
 	
-	} finally {
+	} 
+	catch (error) {
+		console.error(`******** FAILED to create asset: ${error}`);
+	
+	}finally {
 		// Disconnect from the gateway when the application is closing
 		// This will close all connections to the network
 		gateway.disconnect();
@@ -464,7 +480,9 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
 	const reportId = req.params["reportID"];
   // username = req.user.username;
 	// REST call to the HF client <-- sample app served on another server
-	res.json('Received request for reportID ' + reportId);
+	console.log(`reportID: ${reportId}`);
+	//getRecordFromLedger(reportId);
+	//res.json('Received request for reportID ' + reportId);
 	return;
 });
 
@@ -482,7 +500,8 @@ app.post("/labapi/submitreport", upload.any(), function(req, res, next){
 		    //console.log(encfile);
 		}
 		console.log(med_record_array.length);
-		medical_records = med_record_array.join(', ');
+		let medical_records = med_record_array.join(', ');
+		addLedgerEntry('456', "", medical_records)
 		if (next) {
 			console.log("Next function called");
 			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
@@ -508,6 +527,10 @@ app.post("/labapi/consentupdate/:reportID", (req, res) => {
 	console.debug("Received consent update for reportID " + reportId);
 	// client usernames is an iterable array that contains all the allowed accessor IDs or usernames
 	console.debug("Received the following consented clients: " + bodyContent.clientUsernames)
+	
+	//function below updates ledger with accessor list
+	//updateLedgerWithAccessorID(reportId, bodyContent.clientUsernames);
+	
 	//if successful update of ledger, tell the patient that the consent was updated
 	res.sendStatus(200);
 	return;
