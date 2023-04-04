@@ -56,8 +56,10 @@ const encrypt = (filePath) => {
 	// console.log(`The key: ${key}`);
 	// Create an initialization vector
 	const iv = crypto.randomBytes(16);
+	
 	// Create a new cipher using the algorithm, key, and iv
 	const cipher = crypto.createCipheriv(encryptAlgorithm, key, iv);
+
 	// Create the new (encrypted) buffer
 	const result = Buffer.concat([iv, cipher.update(fileBuffer), cipher.final()]);
 	return result.toString('base64');
@@ -68,12 +70,16 @@ const decrypt = (encryptedB64, outputFilePath) => {
 	const key = Buffer.from(process.env.ENCRYPT_AES_KEY, 'base64');
 	var encryptedBuf = Buffer.from(encryptedB64, 'base64');
 
+	
  	// Get the iv: the first 16 bytes
  	const iv = encryptedBuf.slice(0, 16);
  	// Get the rest
  	encryptedBuf = encryptedBuf.slice(16);
+ 	
  	// Create a decipher
  	const decipher = crypto.createDecipheriv(encryptAlgorithm, key, iv);
+ 	
+ 	console.log('decrypt');
  	// Actually decrypt it
 	
  	const result = Buffer.concat([decipher.update(encryptedBuf), decipher.final()]);
@@ -147,8 +153,9 @@ async function initializeGateway() {
 	}
 }
 
-async function getRecordFromLedger(recordid)
+async function getRecordFromLedger(recordid, res)
 {
+	let medicalrecordsarray = [];
 	try {
 		// setup the wallet to hold the credentials of the application user
 		//const wallet = await buildWallet(Wallets, walletPath);
@@ -173,6 +180,10 @@ async function getRecordFromLedger(recordid)
 	        let parsed = JSON.parse(result.toString());
 	        console.log(parsed.MedicalRecords.length);
 	        console.log(parsed.MedicalRecords[0]);
+	        medicalrecordsarray = parsed.MedicalRecords.split(',');
+	        
+	        //console.log(medicalrecordsarray.length);
+	        
 	      
 	} catch (error) {
 		console.error(`******** FAILED to read asset: ${error}`);
@@ -182,6 +193,14 @@ async function getRecordFromLedger(recordid)
 		// This will close all connections to the network
 		gateway.disconnect();
 	}
+	for(let ind = 0; ind < medicalrecordsarray.length; ++ind){
+		    let outputfilepath = 'downloads/' + ind;
+		    console.log(outputfilepath);
+		    decrypt(medicalrecordsarray[ind],outputfilepath);
+		    res.setHeader('Content-Type','application/pdf');
+		    res.download(outputfilepath,'medical_report'+ind);
+	}
+	
 }
 
 async function getRecordFromLedgerWithAccessorID(recordid, accessorid)
@@ -291,7 +310,7 @@ async function addLedgerEntry(recordid, accessorid, medicalrecordarray)
 async function testConsent(){
     await updateLedgerWithAccessorID('117238223', 'ajunnark');
     //console.log('*******to get record from ledger');
-    getRecordFromLedger('117238223');
+    //getRecordFromLedger('117238223');
 }
 
 initializeGateway();
@@ -481,7 +500,9 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
   // username = req.user.username;
 	// REST call to the HF client <-- sample app served on another server
 	console.log(`reportID: ${reportId}`);
-	//getRecordFromLedger(reportId);
+	getRecordFromLedger(reportId, res);
+	//console.log(medical_records.length);
+	
 	//res.json('Received request for reportID ' + reportId);
 	return;
 });
@@ -523,13 +544,13 @@ app.post("/labapi/consentupdate/:reportID", (req, res) => {
 	const reportId = req.params["reportID"];
 	const bodyContent = req.body;
 	// TODO: Actually update consent
-	//testConsent();
+	
 	console.debug("Received consent update for reportID " + reportId);
 	// client usernames is an iterable array that contains all the allowed accessor IDs or usernames
 	console.debug("Received the following consented clients: " + bodyContent.clientUsernames)
 	
 	//function below updates ledger with accessor list
-	//updateLedgerWithAccessorID(reportId, bodyContent.clientUsernames);
+	updateLedgerWithAccessorID(reportId, bodyContent.clientUsernames);
 	
 	//if successful update of ledger, tell the patient that the consent was updated
 	res.sendStatus(200);
@@ -611,7 +632,8 @@ app.get("/trackreports/:accessorID", authenticateJWT, (req, res) => {
 	// TODO: we need a function to gather this information from the blockchain
 	const reports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }]
 	const accessorID = req.params["accessorID"]
-
+	console.log(`accessor id ${accessorID}`);
+	
 	res.render("trackreports", { reports, accessorID });
 	return;
 });
