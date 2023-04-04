@@ -193,18 +193,22 @@ async function getRecordFromLedger(recordid, res)
 		// This will close all connections to the network
 		gateway.disconnect();
 	}
-	for(let ind = 0; ind < medicalrecordsarray.length; ++ind){
-		    let outputfilepath = 'downloads/' + ind;
-		    console.log(outputfilepath);
-		    decrypt(medicalrecordsarray[ind],outputfilepath);
-		    res.setHeader('Content-Type','application/pdf');
-		    res.download(outputfilepath,'medical_report'+ind);
+	if(medicalrecordsarray.length == 1){
+	    let outputfilepath = 'downloads/0';
+	    console.log(outputfilepath);
+	    decrypt(medicalrecordsarray[0],outputfilepath);
+	    res.setHeader('Content-Type','application/pdf');
+	    res.download(outputfilepath,'medical_report0');
+	}
+	else {
+		//TODO handle multiple file downloads
 	}
 	
 }
 
-async function getRecordFromLedgerWithAccessorID(recordid, accessorid)
+async function getRecordFromLedgerWithAccessorID(accessorID, res)
 {
+	let reports = [];
 	try {
 		// setup the wallet to hold the credentials of the application user
 		//const wallet = await buildWallet(Wallets, walletPath);
@@ -223,18 +227,33 @@ async function getRecordFromLedgerWithAccessorID(recordid, accessorid)
 
 		// Get the contract from the network.
 		const contract = network.getContract(chaincodeName);
-		console.log('\n--> Evaluate Transaction: ReadAsset, function returns an asset with a given reportID');
-		let result = await contract.evaluateTransaction('ReadAssetBasedOnAccessorId', recordid, accessorid);
-		console.log(`*** Result: ${prettyJSONString(result.toString())}`);	
+		console.log('\n--> Evaluate Transaction: ReadAsset, function returns all asset with a given accessorID');
+		let result = await contract.evaluateTransaction('GetAllAssetsForSpecificAccessor', accessorID);
+		console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+		let parsed = JSON.parse(result.toString());
+		console.log(`length of records + ${parsed.length}`);	
+		for (let ind=0; ind < parsed.length; ++ind){
+		//let record = `{ "report_id\": ";
+			reports.push(`{ "report_id": ${parsed[ind].RecordID}, "patient_id": "ABC", "report_status": "Pending" }`);
+		}
 	
 	} catch (error) {
-		console.error(`******** FAILED to read asset based on accessor id: ${error}`);
+		console.error(`******** FAILED to read assets based on accessor id: ${error}`);
 	
 	}finally {
 		// Disconnect from the gateway when the application is closing
 		// This will close all connections to the network
 		gateway.disconnect();
 	}
+	if(reports.length){
+		console.log(reports);
+		res.render("trackreports", { reports, accessorID });
+	}
+	else {
+		const dummyreports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }];
+		res.render("trackreports", { reports, accessorID });
+	}
+	//const reports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }];
 }
 
 async function updateLedgerWithAccessorID(recordid, accessorid)
@@ -522,18 +541,20 @@ app.post("/labapi/submitreport", upload.any(), function(req, res, next){
 		}
 		console.log(med_record_array.length);
 		let medical_records = med_record_array.join(', ');
-		addLedgerEntry('456', "", medical_records)
+		let recordID = "hypersecurelabs"+Date.now();
+		console.log(recordID);
+		addLedgerEntry(recordID, "", medical_records)
 		if (next) {
 			console.log("Next function called");
 			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
 			
-			globalFileID = 0; // reset the file IDs for the next report
-			globalReportID = globalReportID + 1; // increase the global report ID
-			fs.writeFileSync('last_report_id.txt', globalReportID.toString() + "\n");
+			//globalFileID = 0; // reset the file IDs for the next report
+			//globalReportID = globalReportID + 1; // increase the global report ID
+			//fs.writeFileSync('last_report_id.txt', globalReportID.toString() + "\n");
 			return next();
 		}
 		else {
-			console.log(req.files);
+			//console.log(req.files);
 			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
 			return;
 		}
@@ -630,11 +651,11 @@ app.get("/success", (req, res) => {
 app.get("/trackreports/:accessorID", authenticateJWT, (req, res) => {
 	// example code to get several track reports dynamically updated
 	// TODO: we need a function to gather this information from the blockchain
-	const reports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }]
-	const accessorID = req.params["accessorID"]
+	//const reports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }]
+	const accessorID = req.params["accessorID"];
 	console.log(`accessor id ${accessorID}`);
-	
-	res.render("trackreports", { reports, accessorID });
+	getRecordFromLedgerWithAccessorID(accessorID, res);
+	//res.render("trackreports", { reports, accessorID });
 	return;
 });
 
