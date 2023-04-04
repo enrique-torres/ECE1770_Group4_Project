@@ -123,7 +123,9 @@
           <div class="report-info">
             <h3>Report ID: <%=report.report_id%></h3>
           </div>
+          <form action="/labapi/getreport/<%=report.report_id%>">
           <button class="report-btn">Request</button>
+        </form>
         </li>
         <% })%>
       </ul>
