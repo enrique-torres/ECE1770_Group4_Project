@@ -32,6 +32,23 @@ const crypto = require('crypto');
 const encryptAlgorithm = 'aes-256-ctr'; //Using AES encryption
 
 // Output: b64 encoding of encrypted file content 
+const encryptbuffer = (fileBuffer) => {
+
+	console.log('to encrypt');
+	const key = Buffer.from(process.env.ENCRYPT_AES_KEY, 'base64');
+	// console.log(`The key: ${key}`);
+	// Create an initialization vector
+	const iv = crypto.randomBytes(16);
+	// Create a new cipher using the algorithm, key, and iv
+	console.log('to create new cipher');
+	const cipher = crypto.createCipheriv(encryptAlgorithm, key, iv);
+	console.log('to concatenate cipher');
+	// Create the new (encrypted) buffer
+	const result = Buffer.concat([iv, cipher.update(fileBuffer), cipher.final()]);
+	return result.toString('base64');
+};
+
+// Output: b64 encoding of encrypted file content 
 const encrypt = (filePath) => {
 	const fileBuffer = fs.readFileSync(filePath)
 
@@ -328,15 +345,16 @@ fs.stat('last_report_id.txt', function(err, stat) {
 
 
 const multer = require("multer");
-var multerStorage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, 'uploads');
-	},
-	filename: function (req, file, cb) {
-		cb(null, globalReportID + '_' + globalFileID);
-		globalFileID = globalFileID + 1;
-	}
-});
+var multerStorage = multer.memoryStorage();
+//var multerStorage = multer.diskStorage({
+//	destination: function (req, file, cb) {
+//		cb(null, 'uploads');
+//	},
+//	filename: function (req, file, cb) {
+//		cb(null, globalReportID + '_' + globalFileID);
+//		globalFileID = globalFileID + 1;
+//	}
+//});
 const upload = multer({ storage: multerStorage });
 
 
@@ -450,14 +468,25 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
 	return;
 });
 
-app.route("/labapi/submitreport")
-	.post(upload.any(), (req, res, next) => {
+app.post("/labapi/submitreport", upload.any(), function(req, res, next){
 		const email = req.body.email;
 		console.log("Sent e-mail with consent update link to: " + email);
+		let num = req.files.length;
+		console.log(num+ " files uploaded");
+		let index,len;
+		let med_record_array = [];
+		for(index = 0, len = num; index < len; ++index){
+
+		    let encfile = encryptbuffer(req.files[index].buffer);
+		    med_record_array.push(encfile);
+		    //console.log(encfile);
+		}
+		console.log(med_record_array.length);
+		medical_records = med_record_array.join(', ');
 		if (next) {
 			console.log("Next function called");
 			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
-			//res.status(400).json({ message: "Error in upload", status: 400 });
+			
 			globalFileID = 0; // reset the file IDs for the next report
 			globalReportID = globalReportID + 1; // increase the global report ID
 			fs.writeFileSync('last_report_id.txt', globalReportID.toString() + "\n");
@@ -468,7 +497,8 @@ app.route("/labapi/submitreport")
 			res.status(200).json({ message: "Successfully Uploaded", status: 200, success: true });
 			return;
 		}
-	});
+		});
+//	});
 
 app.post("/labapi/consentupdate/:reportID", (req, res) => {
 	const reportId = req.params["reportID"];
