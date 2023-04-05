@@ -220,8 +220,8 @@ async function getRecordFromLedgerWithAccessorID(accessorID, res)
 		let parsed = JSON.parse(result.toString());
 		console.log(`length of records + ${parsed.length}`);	
 		for (let ind=0; ind < parsed.length; ++ind){
-		//let record = `{ "report_id\": ";
-			reports.push(`{ "report_id": ${parsed[ind].RecordID}, "patient_id": "ABC", "report_status": "Pending" }`);
+			//let record = `{ "report_id\": ";
+			reports.push({ "report_id": parsed[ind].RecordID, "patient_id": "ABC", "report_status": "Pending" });
 		}
 	
 	} catch (error) {
@@ -508,34 +508,36 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
   // username = req.user.username;
 	// REST call to the HF client <-- sample app served on another server
 	console.log(`reportID: ${reportId}`);
-	const medicalrecordsarray = getRecordFromLedger(reportId, res);
-	if(medicalrecordsarray.length == 1){
-	    let outputfilepath = 'downloads/0';
-	    console.log(outputfilepath);
-	    decrypt(medicalrecordsarray[0], outputfilepath);
-	    res.setHeader('Content-Type', 'application/pdf');
-	    res.download(outputfilepath, 'medical_report0');
-	}
-	else {
-		for (i = 0; i < medicalrecordsarray.length; i++) {
-			let outputfilepath = 'downloads/0_' + i.toString();
-			console.log(outputfilepath);
-			decrypt(medicalrecordsarray[i], outputfilepath);
-		}
-		createZipArchive('downloads');
-		res.setHeader('Content-Disposition', 'attachment; filename=records.zip');
-    	res.setHeader('Content-Type', 'application/zip');
-	    res.download(outputfilepath, 'records.zip');
-		//res.sendFile(outputfilepath + '/download.zip'); //if res.download doesn't work, try this
-	}
-	// delete all files from downloads folder, including zip
-	fs.readdir('downloads', (err, files) => {
-		if (err) throw err;
-		for (const file of files) {
-			fs.unlink(path.join(directory, file), (err) => {
+	getRecordFromLedger(reportId, res)
+		.then((medicalrecordsarray) => {
+			if(medicalrecordsarray.length == 1){
+				let outputfilepath = 'downloads/0';
+				console.log(outputfilepath);
+				decrypt(medicalrecordsarray[0], outputfilepath);
+				res.setHeader('Content-Type', 'application/pdf');
+				res.download(outputfilepath, 'medical_report0');
+			}
+			else {
+				for (i = 0; i < medicalrecordsarray.length; i++) {
+					let outputfilepath = 'downloads/0_' + i.toString();
+					console.log(outputfilepath);
+					decrypt(medicalrecordsarray[i], outputfilepath);
+				}
+				createZipArchive('downloads');
+				res.setHeader('Content-Disposition', 'attachment; filename=records.zip');
+				res.setHeader('Content-Type', 'application/zip');
+				res.download(outputfilepath, 'records.zip');
+				//res.sendFile(outputfilepath + '/download.zip'); //if res.download doesn't work, try this
+			}
+			// delete all files from downloads folder, including zip
+			fs.readdir('downloads', (err, files) => {
 				if (err) throw err;
+				for (const file of files) {
+					fs.unlink(path.join(directory, file), (err) => {
+						if (err) throw err;
+					});
+				}
 			});
-		}
 	});
 	return;
 });
@@ -668,15 +670,17 @@ app.get("/trackreports/:accessorID", authenticateJWT, (req, res) => {
 	//const reports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }]
 	const accessorID = req.params["accessorID"];
 	console.log(`accessor id ${accessorID}`);
-	let reports = getRecordFromLedgerWithAccessorID(accessorID, res);
-	if(reports.length){
-		console.log(reports);
-		res.render("trackreports", { reports, accessorID });
-	}
-	else {
-		const dummyreports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }];
-		res.render("trackreports", { reports, accessorID });
-	}
+	getRecordFromLedgerWithAccessorID(accessorID, res)
+		.then((reports => {
+			if(reports.length){
+				console.log(reports);
+				res.render("trackreports", { reports, accessorID });
+			}
+			else {
+				const dummyreports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }];
+				res.render("trackreports", { reports, accessorID });
+			}
+	}));
 	//res.render("trackreports", { reports, accessorID });
 	return;
 });
