@@ -518,7 +518,7 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
 				res.download(outputfilepath, 'medical_report0');
 			}
 			else {
-				for (i = 0; i < medicalrecordsarray.length; i++) {
+				for (let i = 0; i < medicalrecordsarray.length; i++) {
 					let outputfilepath = 'downloads/0_' + i.toString();
 					console.log(outputfilepath);
 					decrypt(medicalrecordsarray[i], outputfilepath);
@@ -526,14 +526,14 @@ app.get("/labapi/getreport/:reportID", authenticateJWT, function (req, res) {
 				createZipArchive('downloads');
 				res.setHeader('Content-Disposition', 'attachment; filename=records.zip');
 				res.setHeader('Content-Type', 'application/zip');
-				res.download(outputfilepath, 'records.zip');
+				res.download('records.zip');
 				//res.sendFile(outputfilepath + '/download.zip'); //if res.download doesn't work, try this
 			}
 			// delete all files from downloads folder, including zip
 			fs.readdir('downloads', (err, files) => {
 				if (err) throw err;
 				for (const file of files) {
-					fs.unlink(path.join(directory, file), (err) => {
+					fs.unlink(path.join('downloads', file), (err) => {
 						if (err) throw err;
 					});
 				}
