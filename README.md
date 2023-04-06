@@ -25,7 +25,7 @@ After cloning the repository certain pre-requisites need to be installed in Ubun
 
 *sudo systemctl start docker*  
 *sudo systemctl enable docker*  
-*sudo usermod -a -G docker <user>*  
+*sudo usermod -a -G docker* **user**  
 
 *sudo apt-get update*  
 
@@ -49,7 +49,7 @@ After cloning the repository certain pre-requisites need to be installed in Ubun
 
 ### ensure all project directories are owned by current user and not root
 *cd ~/Desktop*  
-*sudo chown -R <user>:<user> hyperledger/*  
+*sudo chown -R* **user**:**user** *hyperledger/*  
 
 
 ### bring up the fabric test network with two peer endorsing nodes belonging to different organizations and one ordering node and create private channel channel1 between them
