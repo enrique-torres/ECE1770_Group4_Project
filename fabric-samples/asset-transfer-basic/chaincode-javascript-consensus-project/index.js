@@ -6,7 +6,7 @@
 
 'use strict';
 
-const assetTransfer = require('./lib/assetTransfer');
+const hyperlabsSecure = require('./lib/hyperlabsSecure');
 
-module.exports.AssetTransfer = assetTransfer;
-module.exports.contracts = [assetTransfer];
+module.exports.HyperlabsSecure = hyperlabsSecure;
+module.exports.contracts = [hyperlabsSecure];

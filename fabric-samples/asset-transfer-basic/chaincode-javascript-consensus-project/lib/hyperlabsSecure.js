@@ -11,7 +11,7 @@ const stringify  = require('json-stringify-deterministic');
 const sortKeysRecursive  = require('sort-keys-recursive');
 const { Contract } = require('fabric-contract-api');
 
-class AssetTransfer extends Contract {
+class HyperlabsSecure extends Contract {
 
     async InitLedger(ctx) {
         const asset =
@@ -21,7 +21,6 @@ class AssetTransfer extends Contract {
                 MedicalRecords: ['9uvdghhr6yytd56ytthrt6y6yhgfththf','gdghtrh6yryrdth6ythfhd65ytrhhd6yh','hrtdu5llklklkl6yrgrtsydrthdytf'],
             };
          
-	   //let recordID='gdg5ygtdghrty5yt';
         
             asset.docType = 'asset';
             // example of how to write to world state deterministically
@@ -178,4 +177,4 @@ class AssetTransfer extends Contract {
     }
 }
 
-module.exports = AssetTransfer;
+module.exports = HyperlabsSecure;

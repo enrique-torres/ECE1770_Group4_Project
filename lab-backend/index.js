@@ -220,7 +220,7 @@ async function getRecordFromLedgerWithAccessorID(accessorID, res)
 		let parsed = JSON.parse(result.toString());
 		console.log(`length of records + ${parsed.length}`);	
 		for (let ind=0; ind < parsed.length; ++ind){
-			//let record = `{ "report_id\": ";
+		
 			reports.push({ "report_id": parsed[ind].RecordID, "patient_id": "ABC", "report_status": "Pending" });
 		}
 	
@@ -233,7 +233,7 @@ async function getRecordFromLedgerWithAccessorID(accessorID, res)
 		gateway.disconnect();
 	}
 	return reports;
-	//const reports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }];
+
 }
 
 async function updateLedgerWithAccessorID(recordid, accessorid)
@@ -306,12 +306,6 @@ async function addLedgerEntry(recordid, accessorid, medicalrecordarray)
 }
 
 
-async function testConsent(){
-    await updateLedgerWithAccessorID('117238223', 'ajunnark');
-    //console.log('*******to get record from ledger');
-    //getRecordFromLedger('117238223');
-}
-
 initializeGateway();
 const DBSOURCE = "usersdb.sqlite";
 
@@ -363,19 +357,19 @@ app.use(cookieParser());
 
 // File uploading imports and global variables
 // report ID handling
-var globalReportID = 0;
-var globalFileID = 0;
-fs.stat('last_report_id.txt', function(err, stat) {
-	if (err == null) {
-		const data = fs.readFileSync('last_report_id.txt', 'utf8');
-		globalReportID = parseInt(data);
-	} else if (err.code === 'ENOENT') {
-	  // file does not exist
-	  fs.writeFileSync('last_report_id.txt', "0\n");
-	} else {
-	  console.log('Unrecognized error when opening report ID log: ', err.code);
-	}
-});
+//var globalReportID = 0;
+//var globalFileID = 0;
+//fs.stat('last_report_id.txt', function(err, stat) {
+//	if (err == null) {
+//		const data = fs.readFileSync('last_report_id.txt', 'utf8');
+//		globalReportID = parseInt(data);
+//	} else if (err.code === 'ENOENT') {
+//	  // file does not exist
+//	  fs.writeFileSync('last_report_id.txt', "0\n");
+//	} else {
+//	  console.log('Unrecognized error when opening report ID log: ', err.code);
+//	}
+//});
 
 
 const multer = require("multer");
@@ -389,7 +383,16 @@ var multerStorage = multer.memoryStorage();
 //		globalFileID = globalFileID + 1;
 //	}
 //});
-const upload = multer({ storage: multerStorage });
+const upload = multer({ 
+	storage: multerStorage
+	//, fileFilter: function(req, file, callback){
+	//	var ext = path.extname(file.originalname);
+	//	if(ext !== '.pdf'){
+	//	return callback(new Error('Only pdf files are allowed to be uploaded'))
+	//	}
+	//	callback(null,true)
+	//	}		
+});
 
 
 // Code to render dynamic HTML templates
@@ -580,7 +583,7 @@ app.post("/labapi/submitreport", upload.any(), function(req, res, next){
 app.post("/labapi/consentupdate/:reportID", (req, res) => {
 	const reportId = req.params["reportID"];
 	const bodyContent = req.body;
-	// TODO: Actually update consent
+	
 	
 	console.debug("Received consent update for reportID " + reportId);
 	// client usernames is an iterable array that contains all the allowed accessor IDs or usernames
@@ -666,8 +669,8 @@ app.get("/success", (req, res) => {
 // Function that handles rendering of report tracking for the client
 app.get("/trackreports/:accessorID", authenticateJWT, (req, res) => {
 	// example code to get several track reports dynamically updated
-	// TODO: we need a function to gather this information from the blockchain
-	//const reports = [{ "report_id": 123, "patient_id": "ABC", "report_status": "Pending" }, { "report_id": 456, "patient_id": "DEF", "report_status": "Ready" }, { "report_id": 789, "patient_id": "GHI", "report_status": "Pending" }, { "report_id": 101112, "patient_id": "ABC", "report_status": "Pending" }]
+
+
 	const accessorID = req.params["accessorID"];
 	console.log(`accessor id ${accessorID}`);
 	getRecordFromLedgerWithAccessorID(accessorID, res)
