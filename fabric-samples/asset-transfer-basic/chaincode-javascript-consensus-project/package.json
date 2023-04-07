@@ -1,7 +1,7 @@
 {
     "name": "hyperlabs-secure",
     "version": "1.0.0",
-    "description": "Hyperlabs-Secure contract implemented in JavaScript",
+    "description": "Hypersecure-Labs contract implemented in JavaScript",
     "main": "index.js",
     "engines": {
         "node": ">=12",

@@ -6,7 +6,7 @@
 
 'use strict';
 
-const hyperlabsSecure = require('./lib/hyperlabsSecure');
+const hypersecureLabs = require('./lib/hypersecureLabs');
 
-module.exports.HyperlabsSecure = hyperlabsSecure;
-module.exports.contracts = [hyperlabsSecure];
+module.exports.HypersecureLabs = hypersecureLabs;
+module.exports.contracts = [hypersecureLabs];
