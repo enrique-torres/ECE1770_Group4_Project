@@ -294,14 +294,13 @@ async function deleteAllRecordIds()
 		console.log('\n--> Submit Transaction: DeleteAllAssets');
 	    await contract.submitTransaction('DeleteAllAssets');
 		console.log('******** deleted assets');	
-	
 	} catch (error) {
 		console.error(`******** FAILED to delete assets: ${error}`);
-	
 	}finally {
 		// Disconnect from the gateway when the application is closing
 		// This will close all connections to the network
 		gateway.disconnect();
+		return 0;
 	}
 }
 
@@ -727,4 +726,74 @@ app.get("/trackreports/:accessorID", authenticateJWT, (req, res) => {
 app.post("/labapi/login/test", authenticateJWT, (req, res) => {
     res.status(200).send('Logged in!');
 	return;
+});
+
+// --------------------- EVALUATION FUNCTIONS ---------------------
+function getRandomRecordID(min, max) {
+	return Math.random() * (max - min) + min;
+}
+app.get("/labapi/evaluate", authenticateJWT, async (req, res) => {
+	const numTimeSeriesIterations = 100;
+	const accessorID = "user1";
+	const fileSizedPaths = ["evaluation/file_1kb.txt", "evaluation/file_512kb.txt", "evaluation/file_1mb.txt"];
+	const nextRecordID = 0;
+	try {
+		for (let i = 0; i < fileSizedPaths.length; i++) {
+			await deleteAllRecordIds();
+			var fileContents = fs.readFileSync(fileSizedPaths[i]);
+			for (let j = 0; j < numTimeSeriesIterations; j++) {
+				// write ten entries
+				const startWrite = Date.now();
+				await Promise.all([addLedgerEntry(nextRecordID, accessorID, fileContents),
+					addLedgerEntry((nextRecordID+1).toString(), accessorID, fileContents),
+					addLedgerEntry((nextRecordID+2).toString(), accessorID, fileContents),
+					addLedgerEntry((nextRecordID+3).toString(), accessorID, fileContents),
+					addLedgerEntry((nextRecordID+4).toString(), accessorID, fileContents),
+					addLedgerEntry((nextRecordID+5).toString(), accessorID, fileContents),
+					addLedgerEntry((nextRecordID+6).toString(), accessorID, fileContents),
+					addLedgerEntry((nextRecordID+7).toString(), accessorID, fileContents),
+					addLedgerEntry((nextRecordID+8).toString(), accessorID, fileContents),
+					addLedgerEntry((nextRecordID+9).toString(), accessorID, fileContents)]);
+				const endWrite = Date.now();
+				const writeTime = endWrite - startWrite;
+				fs.writeFileSync('evaluation/write_time_series.txt', writeTime);
+				// read ten random entries from all the entries we have added up to this point
+				const startRandomRead = Date.now();
+				await Promise.all([getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res),
+									getRecordFromLedger(getRandomRecordID(0, nextRecordID - 1).toString(), res)]);
+				const endRandomRead = Date.now();
+				const randomReadTime = endRandomRead - startRandomRead;
+				fs.writeFileSync('evaluation/random_read_time_series.txt', randomReadTime);
+				// read a speficic entry over and over
+				const recordToRead = "0";
+				const startRead = Date.now();
+				await Promise.all([getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res),
+					getRecordFromLedger(recordToRead, res)]);
+				const endRead = Date.now();
+				const readTime = endRead - startRead;
+				fs.writeFileSync('evaluation/read_time_series.txt', readTime);
+				nextRecordID = nextRecordID + 10;
+			}
+		}
+	} catch(err) {
+
+	} finally {
+
+	}
 });
