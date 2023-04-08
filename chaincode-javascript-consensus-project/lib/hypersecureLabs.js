@@ -155,11 +155,14 @@ class HypersecureLabs extends Contract {
     
     // DeleteAllAssets  in the world state.
     async DeleteAllAssets(ctx) {
-        const allResults = [];
+  
+        let allResults = [];
         // range query with empty string for startKey and endKey does an open-ended query of all assets in the chaincode namespace.
         const iterator = await ctx.stub.getStateByRange('', '');
-        let result = await iterator.next();
-        while (!result.done) {
+        let result;// = await iterator.next();
+        while (true) {
+            result = await iterator.next();
+            if(result.value){
             const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
             let record;
             try {
@@ -170,14 +173,18 @@ class HypersecureLabs extends Contract {
             }
       
             allResults.push(record.RecordID);
-            
-            result = await iterator.next();
+            } 
+            if(result.done){
+            	break;
+            }
+            //result = await iterator.next();
         }
         
         for(let ind = 0; ind < allResults.length; ++ind){
-		ctx.stub.deleteState(allResults[ind]);
+        	
+		await ctx.stub.deleteState(allResults[ind]);
         }
-        return JSON.stringify(allResults);
+        return true;
     }
     
         // GetAllAssets returns all assets found in the world state.
