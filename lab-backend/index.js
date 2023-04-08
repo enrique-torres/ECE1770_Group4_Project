@@ -177,9 +177,9 @@ async function getRecordFromLedger(recordid)
 		const contract = network.getContract(chaincodeName);
 		console.log('\n--> Evaluate Transaction: ReadAsset, function returns an asset with a given reportID');
 		let result = await contract.evaluateTransaction('ReadAsset', recordid);
-		console.log(`*** Result: ${prettyJSONString(result.toString())}`);	
+		//console.log(`*** Result: ${prettyJSONString(result.toString())}`);	
 	    let parsed = JSON.parse(result.toString());
-	    console.log(parsed.MedicalRecords.length);
+	    //console.log(parsed.MedicalRecords.length);
 	    //console.log(parsed.MedicalRecords[0]);
 	    medicalrecordsarray = parsed.MedicalRecords.split(',');
 	    //console.log(medicalrecordsarray.length);   
@@ -216,9 +216,9 @@ async function getRecordFromLedgerWithAccessorID(accessorID)
 		const contract = network.getContract(chaincodeName);
 		console.log('\n--> Evaluate Transaction: ReadAsset, function returns all asset with a given accessorID');
 		let result = await contract.evaluateTransaction('GetAllAssetsForSpecificAccessor', accessorID);
-		console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+		//console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 		let parsed = JSON.parse(result.toString());
-		console.log(`length of records + ${parsed.length}`);	
+		//console.log(`length of records + ${parsed.length}`);	
 		for (let ind=0; ind < parsed.length; ++ind){
 		
 			reports.push({ "report_id": parsed[ind].RecordID, "patient_id": "ABC", "report_status": "Pending" });
@@ -327,7 +327,7 @@ async function addLedgerEntry(recordid, accessorid, medicalrecordarray)
 		const contract = network.getContract(chaincodeName);
 		console.log('\n--> Submit Transaction: CreateAsset recordid,  if recordid exists return error');
 	    	await contract.submitTransaction('CreateAsset', recordid, accessorid, medicalrecordarray);
-		console.log('******** created asset');	
+		//console.log('******** created asset');	
 	
 	} 
 	catch (error) {
@@ -735,7 +735,7 @@ function getRandomRecordID(min, max) {
 }
 
 async function startEvaluation(){
-	const numTimeSeriesIterations = 100;
+	const numTimeSeriesIterations = 10;
 	const accessorID = "user1";
 	const fileSizedPaths = ["evaluation/file_1kb.txt", "evaluation/file_512kb.txt", "evaluation/file_1mb.txt"];
 	let nextRecordID = 0;
@@ -760,7 +760,7 @@ async function startEvaluation(){
 				const endWrite = Date.now();
 				const writeTime = endWrite - startWrite;
 				
-				fs.writeFileSync('evaluation/write_time_series.txt', ''+writeTime);
+				fs.appendFileSync('evaluation/write_time_series.txt', ''+writeTime+'\r\n');
 				// read ten random entries from all the entries we have added up to this point
 				const startRandomRead = Date.now();
 				await  getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
@@ -785,10 +785,10 @@ async function startEvaluation(){
 				
 				const endRandomRead = Date.now();
 				const randomReadTime = endRandomRead - startRandomRead;
-				fs.writeFileSync('evaluation/random_read_time_series.txt', ''+randomReadTime);
+				fs.appendFileSync('evaluation/random_read_time_series.txt', ''+randomReadTime+'\r\n');
 				
 				// read a specific entry over and over
-				const recordToRead = "0";
+				const recordToRead = (nextRecordID).toString();
 				const startRead = Date.now();
 				await getRecordFromLedger(recordToRead);
 				await getRecordFromLedger(recordToRead);
@@ -804,7 +804,7 @@ async function startEvaluation(){
 				const endRead = Date.now();
 				const readTime = endRead - startRead;
 				
-				fs.writeFileSync('evaluation/read_time_series.txt', ''+readTime);
+				fs.appendFileSync('evaluation/read_time_series.txt', ''+readTime+'\r\n');
 				
 				nextRecordID = nextRecordID + 10;
 				
