@@ -759,7 +759,7 @@ async function startEvaluation(){
 
 				const endWrite = Date.now();
 				const writeTime = endWrite - startWrite;
-				console.log("write");
+				
 				fs.writeFileSync('evaluation/write_time_series.txt', ''+writeTime);
 				// read ten random entries from all the entries we have added up to this point
 				const startRandomRead = Date.now();
@@ -800,10 +800,10 @@ async function startEvaluation(){
 				await getRecordFromLedger(recordToRead);
 				await getRecordFromLedger(recordToRead);
 				await getRecordFromLedger(recordToRead);
-				console.log("done reads");
+				
 				const endRead = Date.now();
 				const readTime = endRead - startRead;
-				console.log(readTime);
+				
 				fs.writeFileSync('evaluation/read_time_series.txt', ''+readTime);
 				
 				nextRecordID = nextRecordID + 10;
