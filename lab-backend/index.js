@@ -735,7 +735,7 @@ function getRandomRecordID(min, max) {
 }
 
 async function startEvaluation(){
-	const numTimeSeriesIterations = 10;
+	const numTimeSeriesIterations = 30;
 	const accessorID = "user1";
 	const fileSizedPaths = ["evaluation/file_1kb.txt", "evaluation/file_512kb.txt", "evaluation/file_1mb.txt"];
 	let nextRecordID = 0;
