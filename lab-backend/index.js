@@ -763,25 +763,25 @@ async function startEvaluation(){
 				fs.appendFileSync('evaluation/write_time_series_'+i+'.txt', ''+j+': '+writeTime+'\r\n');
 				// read ten random entries from all the entries we have added up to this point
 				const startRandomRead = Date.now();
-				await  getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await  getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID +9).toString());
 				
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID+9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID+9).toString());
 				
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID +9).toString());
 				
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID +9).toString());
 									
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID +9).toString());
 									
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID +9).toString());
 									
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID +9).toString());
 									
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID +9).toString());
 									
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID +9).toString());
 									
-				await getRecordFromLedger(getRandomRecordID(0, nextRecordID+9).toString());
+				await getRecordFromLedger(getRandomRecordID(nextRecordID, nextRecordID+9).toString());
 				
 				const endRandomRead = Date.now();
 				const randomReadTime = endRandomRead - startRandomRead;
