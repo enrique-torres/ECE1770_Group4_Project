@@ -760,7 +760,7 @@ async function startEvaluation(){
 				const endWrite = Date.now();
 				const writeTime = endWrite - startWrite;
 				
-				fs.appendFileSync('evaluation/write_time_series.txt', ''+writeTime+'\r\n');
+				fs.appendFileSync('evaluation/write_time_series_'+i+'.txt', ''+j+': '+writeTime+'\r\n');
 				// read ten random entries from all the entries we have added up to this point
 				const startRandomRead = Date.now();
 				await  getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
@@ -773,7 +773,7 @@ async function startEvaluation(){
 									
 				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
 									
-			        await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
+				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
 									
 				await getRecordFromLedger(getRandomRecordID(0, nextRecordID +9).toString());
 									
@@ -785,7 +785,7 @@ async function startEvaluation(){
 				
 				const endRandomRead = Date.now();
 				const randomReadTime = endRandomRead - startRandomRead;
-				fs.appendFileSync('evaluation/random_read_time_series.txt', ''+randomReadTime+'\r\n');
+				fs.appendFileSync('evaluation/random_read_time_series_'+i+'.txt', ''+j+': '+randomReadTime+'\r\n');
 				
 				// read a specific entry over and over
 				const recordToRead = (nextRecordID).toString();
@@ -804,7 +804,7 @@ async function startEvaluation(){
 				const endRead = Date.now();
 				const readTime = endRead - startRead;
 				
-				fs.appendFileSync('evaluation/read_time_series.txt', ''+readTime+'\r\n');
+				fs.appendFileSync('evaluation/read_time_series_'+i+'.txt', ''+j+': '+readTime+'\r\n');
 				
 				nextRecordID = nextRecordID + 10;
 				
