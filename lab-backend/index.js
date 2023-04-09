@@ -813,7 +813,7 @@ async function startEvaluation(){
 	} catch(err) {
 
 	} finally {
-
+		await deleteAllRecordIds();
 	}
 }
 
