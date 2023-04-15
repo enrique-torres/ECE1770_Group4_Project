@@ -111,9 +111,9 @@ The front-end application can be accessed through several end-points:
 - localhost:3000/consentupdate/<reportID> allows the patient to modify their access consent for the medical report with report ID <reportID>. Report IDs can be gathered from the backend terminal once a file submission has been completed. Report IDs will have the following example format: hypersecurelabs1681518271
 
 ## Performance evaluation results
-![alt text](https://github.com/enrique-torres/ECE1770_Group4_Project/main/images/write30iters.png?raw=true)
-![alt text](https://github.com/enrique-torres/ECE1770_Group4_Project/main/images/repeatread30iters.png?raw=true)
-![alt text](https://github.com/enrique-torres/ECE1770_Group4_Project/main/images/randread30iters.png?raw=true)
+![Write throughput](https://github.com/enrique-torres/ECE1770_Group4_Project/blob/main/images/write30iters.png)
+![Repeated read throughput](https://github.com/enrique-torres/ECE1770_Group4_Project/blob/main/images/repeatread30iters.png)
+![Random read throughput](https://github.com/enrique-torres/ECE1770_Group4_Project/blob/main/images/randread30iters.png)
 
 In this section we explain our experimental setup and provide insight into the obtained evaluation results. The experiments for evaluation were setup on a Ubuntu 20.04 LTS virtual machine running in Oracle Virtual Box with dual cores, 4GB RAM and 45 GB of allocated storage. A new HTTP GET API endpoint called /labapi/evaluate was implemented to provide a simple way to iteratively evaluate the application through different experiments. Three different experiments were conducted measuring the throughput of reads and writes of the application by using three different medical record file sizes: 1 KiB, 512 KiB and 1 MiB. Also, before starting the experiment with a particular file size, the existing assets on the blockchain were deleted so that they don't bias the performance over time of each of the different experiments. 
 
