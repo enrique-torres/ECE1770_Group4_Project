@@ -94,8 +94,42 @@ After cloning the repository certain pre-requisites need to be installed in Ubun
 
 *peer lifecycle chaincode querycommitted --channelID channel1 --name basic --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem*  
 
+### Installing the pre-requisites for the backend NodeJS application
+Enter the lab-backend directory and run the following command:
+*npm install*
+
 ## Executing our project and replicating our results
-TODO
+To execute our project, first the Hyperledger Fabric network must be active. Check with systemctl if Docker-Compose is active and once it is, execute the script "initialize_network.sh". This script will bring the network up, initialize the certificates and peers and complete the initialization of the network. Otherwise, follow the above instructions on how to activate the Fabric network.
+
+After the network is running, we need to run the lab backend NodeJS application. To do so, enter the directory lab-backend from this repository and run the following command:
+*node index.js*
+
+This will initialize the backend and front-end applications, register the application on the Hyperledger and will initialize a HTTP server on "localhost:3000".
+The front-end application can be accessed through several end-points:
+- localhost:3000 is the accessors authentication page, and it will redirect the authenticated user to localhost:3000/trackreports/<accessorID>. As an example to test the application, several users are setup in the database for easy login access. One such user has the following credentials: Username: user1, Password: user1
+- localhost:3000/submitreport contains the front-end site for medical report file uploading and submission to the blockchain
+- localhost:3000/consentupdate/<reportID> allows the patient to modify their access consent for the medical report with report ID <reportID>. Report IDs can be gathered from the backend terminal once a file submission has been completed. Report IDs will have the following example format: hypersecurelabs1681518271
 
 ## Performance evaluation results
-TODO
+![alt text](https://github.com/enrique-torres/ECE1770_Group4_Project/main/images/write30iters.png?raw=true)
+![alt text](https://github.com/enrique-torres/ECE1770_Group4_Project/main/images/repeatread30iters.png?raw=true)
+![alt text](https://github.com/enrique-torres/ECE1770_Group4_Project/main/images/randread30iters.png?raw=true)
+
+In this section we explain our experimental setup and provide insight into the obtained evaluation results. The experiments for evaluation were setup on a Ubuntu 20.04 LTS virtual machine running in Oracle Virtual Box with dual cores, 4GB RAM and 45 GB of allocated storage. A new HTTP GET API endpoint called /labapi/evaluate was implemented to provide a simple way to iteratively evaluate the application through different experiments. Three different experiments were conducted measuring the throughput of reads and writes of the application by using three different medical record file sizes: 1 KiB, 512 KiB and 1 MiB. Also, before starting the experiment with a particular file size, the existing assets on the blockchain were deleted so that they don't bias the performance over time of each of the different experiments. 
+
+The experiments for the different file sizes are set up in the following manner: For a pre-defined number of iterations (30 in the case of this evaluation), ten write transactions are performed, followed by ten random read transactions (to random record IDs), which are then followed by ten repeated read transactions (to the same record ID). This experimental setup allows us to view and evaluate several things. First, it allows us to see how writes perform overtime when more and more blocks have been committed to the ledger, as in the long run this could and probably will reduce the performance of writing new blocks to the ledger. Second, the reads are done at every iteration after the writes for the same reason, to view the effect of more blocks being committed on the ledger on read throughput. The experiments must be able to observe performance overtime and performance degradation as more blocks are added to the ledger, in both cases of new blocks being added, and blocks being read. Finally, having two different reads experiments (one for random accesses and one for repeated accesses) should allow us to see and compare how our ledger setup performs in the real world, where reads are going to be more frequent than writes.
+
+With this experimental setup in mind, the write throughput was evaluated first. Ten sequential transactions were conducted where for each of the 30 experiment iterations, where ten records with unique record IDs would be created on the ledger. The total time taken for the ten transactions was measured and averaged over them. As shown in the first graph, there is a higher write throughput for 512 KiB files (around 1.2 transactions per second), followed by the write throughput of 1MiB files (average throughput of 0.7 transactions per second), followed by the 1 KiB file maintaining a constant throughput of 0.45 transactions per second. Curiously, the results were somewhat contradictory with the expected results, as the 1KiB file writes would have been expected to achieve a much greater throughput than the 512 KiB and the 1 MiB writes. Further experiments and research showed that these results were produced due to the configuration of our ledger. The ledger was setup by default to batch transactions, which made it wait for either 512 KiB of transactions, or for a timeout of two seconds. This in turn means that our 1 KiB sequential writes never reach the batch size limit, and as such always produce the 2 second timeout. This can be clearly seen in the graph, where the 1 KiB write throughput is the most consistent of the three, always staying at 0.45 transactions per second (or almost one transaction every two seconds).
+
+In the second experiment, the read throughput was evaluated. Similarly to the write throughput experiment, thirty iterations of ten sequential transactions each were used to evaluate the repeated record read throughput of our application. The total time taken for the ten transactions was measured in each iteration, and averaged over all the transactions to calculate the maximum read throughput of our application. As seen in the second graph, the read throughput for 1 KiB file was the highest (around 9 transactions per second), followed by 512 KiB file and the 1 MiB file (both averaging around 4 transactions per second). These results are expected, as the larger the file that the blockchain has to pull, the less read throughput that it will be able to achieve. However, it is interesting to see that there is very little read performance difference between the 512 KiB and 1 MiB file sizes.
+
+The final experiment also evaluated the read throughput in the same way as the repeated read throughput experiment, but in this case for every iteration, ten records with randomized record IDs were read. This experiment allows us to evaluate what the real world performance of our application would be, since most accesses would be performed to random record IDs. The last graph shows the total transactions per second for the three different file sizes. Similarly to the repeated read throughput experiment, the 1KiB reads had the highest throughput, followed by the 512 KiB reads and finally followed by the 1 MiB reads. Surprisingly however, the results do not differ from the repeated reads experiment, which would indicate that our application would be able to perform adequately in real world scenarios.
+
+Finally, to conclude this section, the following table shows the contributions of each of the team's components to the completion of this work. 
+| Researcher | Contributions |
+|---|---|
+| Aditya Junnarkar | Hyperledger Fabric setup, chaincode implementation, general backend implementation, evaluation implementation |
+| Tahmid Mostafa | File encoding/decoding and encryption/decryption, general backend implementation, evaluation implementation |
+| Enrique Torres Sanchez | Front-end application development, backend file uploading, general backend implementation, evaluation implementation |
+
+It is left for future work, due to the large scope of the project, the evaluation of a real-world deployment of our application and ledger in a cloud service, across different geographically distributed nodes, to measure the effect of added latency on our performance.
